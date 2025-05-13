@@ -1,0 +1,2 @@
+# SkillShareHub
+praktikum II projekt

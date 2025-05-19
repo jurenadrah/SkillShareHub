@@ -1,8 +1,42 @@
+'use client'
+
 import Navbar from '@/app/components/Navbar';
 import Hero from '@/app/components/Hero';
 import VideoPreview from '@/app/components/VideoPreview';
+import { supabase } from '@/lib/supabase';
+import { useEffect, useState } from 'react'
+
+
+type Uporabnik = {
+  id: number
+  Ime: string
+  Priimek: string
+  email: string
+}
+
 
 export default function Home() {
+  const [user, setUsers] = useState<any[]>([])
+  const [loading, setLoading] = useState(true)
+
+  useEffect(() => {
+    const fetchUsers = async () => {
+      const { data, error } = await supabase.from('Uporabniki').select('*')
+      if (error) {
+        console.error('Fetch error:', error)
+      } else {
+        console.log('Fetched data:', data)
+        setUsers(data as Uporabnik[])
+      }
+      setLoading(false)  // Also update loading state here
+    }
+
+    fetchUsers()
+
+    
+  }, [])
+
+
   return (
     <main className="bg-[#fefefe]">
       <Navbar />
@@ -80,6 +114,18 @@ export default function Home() {
         <p className="max-w-3xl mx-auto text-gray-600">
           SkillHub je inovativna platforma, ki ti pomaga izboljšati študijske spretnosti in omogoča učenje skozi nove tehnike ter izmenjavo znanja znotraj študentske skupnosti.
         </p>
+        <ul>  
+        {user.map((user) => (
+            <li key={user.id} className="mb-2">
+              {user.Ime ?? 'No name'} (ID: {user.id})
+              {user.Priimek ?? 'No name'} (ID: {user.id})  
+              {user.email ?? 'No name'} (ID: {user.id})  
+            </li>
+          ))}
+        </ul>
+
+
+
       </section>
 
       {/* KONTAKTNA SEKCIJA */}

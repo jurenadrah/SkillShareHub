@@ -123,6 +123,7 @@ export default function StudentProfile() {
       .getPublicUrl(filePath)
 
     setProfilnaSlika(data.publicUrl)
+  }
   // Connect Google Account
   const connectGoogleAccount = async () => {
     setGoogleLoading(true)

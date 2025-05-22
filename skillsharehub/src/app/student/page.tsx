@@ -16,11 +16,15 @@ type Uporabnik = {
 export default function StudentProfile() {
   const [uporabnik, setUporabnik] = useState<Uporabnik | null>(null)
   const [loading, setLoading] = useState(true)
+  const [googleLoading, setGoogleLoading] = useState(false)
 
   const [email, setEmail] = useState('')
   const [bio, setBio] = useState('')
   const [profilnaSlika, setProfilnaSlika] = useState('')
   const [editMode, setEditMode] = useState(false)
+  
+  const [hasGoogleConnected, setHasGoogleConnected] = useState(false)
+  const [showGoogleConnect, setShowGoogleConnect] = useState(false)
 
   const [error, setError] = useState<string | null>(null)
   const [success, setSuccess] = useState<string | null>(null)
@@ -32,6 +36,9 @@ export default function StudentProfile() {
         setLoading(false)
         return
       }
+
+      // Check if user has Google connected
+      setHasGoogleConnected(user.app_metadata?.providers?.includes('google') || false)
 
       const { data, error } = await supabase
         .from('Uporabniki')
@@ -116,6 +123,29 @@ export default function StudentProfile() {
       .getPublicUrl(filePath)
 
     setProfilnaSlika(data.publicUrl)
+  // Connect Google Account
+  const connectGoogleAccount = async () => {
+    setGoogleLoading(true)
+    setError(null)
+    
+    try {
+      const { data, error } = await supabase.auth.signInWithOAuth({
+        provider: 'google',
+        options: {
+          redirectTo: `${window.location.origin}/student`,
+          scopes: 'openid email profile https://www.googleapis.com/auth/calendar.events https://www.googleapis.com/auth/calendar.readonly',
+        }
+      })
+      
+      if (error) {
+        setError('Napaka pri povezavi Google računa: ' + error.message)
+        setGoogleLoading(false)
+      }
+      // Če ni napake, bo uporabnik preusmerjen na Google prijavno stran
+    } catch (e: any) {
+      setError('Napaka: ' + e.message)
+      setGoogleLoading(false)
+    }
   }
 
   if (loading) return <p>Nalaganje...</p>
@@ -158,6 +188,64 @@ export default function StudentProfile() {
               />
             ) : (
               <p className="text-gray-800 whitespace-pre-wrap">{bio || 'Ni opisa.'}</p>
+            )}
+          </div>
+
+          {/* Google account connection */}
+          <div className="mt-4">
+            <label className="block font-semibold mb-1">Povezani računi:</label>
+            
+            {hasGoogleConnected ? (
+              <div className="flex items-center gap-2 p-2 bg-green-50 border border-green-200 rounded text-sm">
+                <img
+                  src="https://www.svgrepo.com/show/475656/google-color.svg"
+                  alt="Google"
+                  className="h-4 w-4"
+                />
+                <span className="text-green-700">Google račun povezan</span>
+              </div>
+            ) : (
+              <>
+                {!showGoogleConnect ? (
+                  <button
+                    onClick={() => setShowGoogleConnect(true)}
+                    className="flex items-center gap-2 p-2 bg-blue-50 text-blue-700 border border-blue-200 rounded hover:bg-blue-100 text-sm"
+                  >
+                    <img
+                      src="https://www.svgrepo.com/show/475656/google-color.svg"
+                      alt="Google"
+                      className="h-4 w-4"
+                    />
+                    <span>+ Poveži Google račun</span>
+                  </button>
+                ) : (
+                  <div className="p-3 bg-blue-50 rounded border border-blue-200 space-y-2">
+                    <p className="text-sm text-blue-800">
+                      Povezava Google računa bo omogočila dostop do Google Calendar funkcij.
+                    </p>
+                    <div className="flex gap-2">
+                      <button
+                        onClick={connectGoogleAccount}
+                        disabled={googleLoading}
+                        className="flex-1 flex items-center justify-center gap-2 px-3 py-2 bg-blue-600 text-white rounded hover:bg-blue-700 text-sm"
+                      >
+                        <img
+                          src="https://www.svgrepo.com/show/475656/google-color.svg"
+                          alt="Google"
+                          className="h-4 w-4"
+                        />
+                        {googleLoading ? 'Povezujem...' : 'Poveži'}
+                      </button>
+                      <button
+                        onClick={() => setShowGoogleConnect(false)}
+                        className="px-3 py-2 bg-gray-400 text-white rounded hover:bg-gray-500 text-sm"
+                      >
+                        Prekliči
+                      </button>
+                    </div>
+                  </div>
+                )}
+              </>
             )}
           </div>
         </div>

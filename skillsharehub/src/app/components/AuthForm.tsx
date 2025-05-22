@@ -8,6 +8,7 @@ export default function AuthForm() {
   const [password, setPassword] = useState('');
   const [ime, setIme] = useState('');
   const [priimek, setPriimek] = useState('');
+  const [tutor, setTutor] = useState(false);
   const [mode, setMode] = useState<'login' | 'signup'>('login');
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
@@ -24,31 +25,12 @@ export default function AuthForm() {
 
     const { data: listener } = supabase.auth.onAuthStateChange((_event, session) => {
       setUser(session?.user ?? null);
-      if (session?.user) {
-        handleProfile(session.user);
-      }
     });
 
     return () => {
       listener.subscription.unsubscribe();
     };
-    // eslint-disable-next-line
   }, []);
-
-  // Google prijava/registracija
-  const handleGoogleSignIn = async () => {
-    setLoading(true);
-    setError('');
-    setSuccess('');
-    const { error } = await supabase.auth.signInWithOAuth({
-      provider: 'google',
-      options: {
-        scopes: 'openid email profile https://www.googleapis.com/auth/calendar.events https://www.googleapis.com/auth/calendar.readonly',
-      }
-    });
-    if (error) setError(error.message);
-    setLoading(false);
-  };
 
   // Navadna registracija
   const handleSignUp = async (e: React.FormEvent) => {
@@ -72,12 +54,18 @@ export default function AuthForm() {
     // 2. Dodaš v svojo tabelo Uporabniki
     const { error: dbError } = await supabase
       .from('Uporabniki')
-      .insert([{ email, ime, priimek }]);
+      .insert([{ email, ime, priimek, tutor }]);
 
     if (dbError) {
       setError(dbError.message);
     } else {
       setSuccess('Registracija uspešna! Preveri email za potrditev.');
+      // Reset form
+      setEmail('');
+      setPassword('');
+      setIme('');
+      setPriimek('');
+      setTutor(false);
     }
     setLoading(false);
   };
@@ -100,29 +88,6 @@ export default function AuthForm() {
     setLoading(false);
   };
 
-  // Sinhronizacija uporabnika v tabelo Uporabniki (za Google prijavo)
-  const handleProfile = async (authUser: any) => {
-    if (!authUser) return;
-    const { data: existing } = await supabase
-      .from('Uporabniki')
-      .select('*')
-      .eq('email', authUser.email)
-      .single();
-
-    if (!existing) {
-      // Ime in priimek iz Google profila
-      const fullName = authUser.user_metadata?.full_name || '';
-      const [ime, ...priimekArr] = fullName.split(' ');
-      const priimek = priimekArr.join(' ');
-      await supabase.from('Uporabniki').insert([
-        {
-          email: authUser.email,
-          ime: ime || '',
-          priimek: priimek || '',
-        },
-      ]);
-    }
-  };
 
   // Odjava
   const signOut = async () => {
@@ -131,6 +96,7 @@ export default function AuthForm() {
     setSuccess('');
     setError('');
   };
+
 
   return (
     <div className="max-w-md w-full mx-auto bg-white rounded shadow p-6 mt-8">
@@ -146,20 +112,6 @@ export default function AuthForm() {
         </div>
       ) : (
         <>
-          <div className="mb-4 flex justify-center">
-            <button
-              onClick={handleGoogleSignIn}
-              disabled={loading}
-              className="flex items-center gap-2 px-4 py-2 bg-indigo-600 text-white rounded hover:bg-indigo-700"
-            >
-              <img
-                src="https://www.svgrepo.com/show/475656/google-color.svg"
-                alt="Google"
-                className="h-5 w-5"
-              />
-              {loading ? 'Povezujem...' : 'Prijava z Google'}
-            </button>
-          </div>
           <div className="flex justify-center mb-4">
             <button
               onClick={() => setMode(mode === 'login' ? 'signup' : 'login')}
@@ -192,6 +144,42 @@ export default function AuthForm() {
                   className="w-full p-2 border rounded"
                   required
                 />
+                
+                {/* Tutor selection for normal registration */}
+                <div className="space-y-2">
+                  <label className="block text-sm font-medium text-gray-700">
+                    Tip računa:
+                  </label>
+                  <div className="space-y-2">
+                    <div className="flex items-center space-x-2">
+                      <input
+                        type="radio"
+                        id="signup-student"
+                        name="signupUserType"
+                        checked={!tutor}
+                        onChange={() => setTutor(false)}
+                        className="w-4 h-4 text-indigo-600"
+                      />
+                      <label htmlFor="signup-student" className="text-sm text-gray-700">
+                        Dijak/Študent - Iščem pomoč pri učenju
+                      </label>
+                    </div>
+                    
+                    <div className="flex items-center space-x-2">
+                      <input
+                        type="radio"
+                        id="signup-tutor"
+                        name="signupUserType"
+                        checked={tutor}
+                        onChange={() => setTutor(true)}
+                        className="w-4 h-4 text-indigo-600"
+                      />
+                      <label htmlFor="signup-tutor" className="text-sm text-gray-700">
+                        Tutor - Ponujam pomoč pri učenju
+                      </label>
+                    </div>
+                  </div>
+                </div>
               </>
             )}
             <input
@@ -223,8 +211,8 @@ export default function AuthForm() {
                 ? 'Prijava'
                 : 'Registracija'}
             </button>
-            {error && <div className="text-red-500">{error}</div>}
-            {success && <div className="text-green-600">{success}</div>}
+            {error && <div className="text-red-500 text-sm">{error}</div>}
+            {success && <div className="text-green-600 text-sm">{success}</div>}
           </form>
         </>
       )}

@@ -39,9 +39,10 @@ type TutorPredmet = {
 
 type Event = {
   id?: number
+  fk_id_uporabnik: number
+  fk_id_predmet: number
   title: string
   description: string
-  lecturer: string
   day_of_week: string
   start_date_time: string
   end_date_time: string
@@ -66,13 +67,15 @@ export default function TutorProfile() {
   const [izbraniPredmeti, setIzbraniPredmeti] = useState<number[]>([])
   const [novPredmetNaziv, setNovPredmetNaziv] = useState('')
   const [novPredmetTip, setNovPredmetTip] = useState<number | null>(null)
+  const [novlistmojihpredmetov, setnovlistmojihpredmetov]=useState<string | null>(null)
 
   // Urnik
   const [dogodki, setDogodki] = useState<Event[]>([])
   const [novDogodek, setNovDogodek] = useState<Event>({
+    fk_id_predmet: NaN,
+    fk_id_uporabnik: NaN,
     title: '',
     description: '',
-    lecturer: '',
     day_of_week: 'Ponedeljek',
     start_date_time: '',
     end_date_time: ''
@@ -147,17 +150,19 @@ export default function TutorProfile() {
         .eq('fk_Uporabniki', tutorId)
       console.log(tipiData)
       if (predmetiData) setPredmeti(predmetiData)
+      
       if (tipiData) setTipiPredmetov(tipiData)
       if (tutorPredmeti) {
         setIzbraniPredmeti(tutorPredmeti.map(tp => tp.fk_Predmeti))
       }
+
     }
 
     const fetchDogodki = async (tutorId: number) => {
       const { data } = await supabase
         .from('Event')
         .select('*')
-        .eq('lecturer', tutorId.toString())
+        .eq('fk_id_uporabnik', tutorId)
         .order('day_of_week', { ascending: true })
         .order('start_date_time', { ascending: true })
 
@@ -320,7 +325,7 @@ export default function TutorProfile() {
         .from('Event')
         .insert([{
           ...novDogodek,
-          lecturer: tutor.id.toString()
+          fk_id_uporabnik: tutor.id
         }])
 
       if (error) throw error
@@ -329,15 +334,16 @@ export default function TutorProfile() {
       const { data } = await supabase
         .from('Event')
         .select('*')
-        .eq('lecturer', tutor.id.toString())
+        .eq('fk_id_uporabnik', tutor.id)
 
       if (data) setDogodki(data)
 
       // Ponastavi obrazec
       setNovDogodek({
+        fk_id_uporabnik: NaN,
+        fk_id_predmet: NaN,
         title: '',
         description: '',
-        lecturer: '',
         day_of_week: 'Ponedeljek',
         start_date_time: '',
         end_date_time: ''
@@ -555,6 +561,24 @@ export default function TutorProfile() {
                 <option value="Nedelja">Nedelja</option>
               </select>
             </div>
+          
+              <div className="form-group">
+                <label>Predmeti:</label>
+                <select
+                  value={novDogodek.fk_id_predmet || ""}
+                  onChange={(e) => setNovDogodek({...novDogodek, fk_id_predmet: Number(e.target.value)})}
+                >
+                  <option value="">Izberi predmet</option>
+                  {predmeti
+                    .filter(predmet => izbraniPredmeti.includes(predmet.id))
+                    .map(predmet => (
+                      <option key={predmet.id} value={predmet.id}>
+                        {predmet.naziv}
+                      </option>
+                    ))}
+                </select>
+              </div>
+
 
             <div className="form-group">
               <label>Naslov:</label>

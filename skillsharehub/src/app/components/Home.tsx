@@ -1,5 +1,13 @@
 'use client'
 
+
+
+/// v eventu odstrani stolpec lecturer pa pridobivaj iz foreign key uporabnika, ime tutorja
+
+
+
+
+
 import Navbar from '@/app/components/Navbar';
 import Hero from '@/app/components/Hero';
 import VideoPreview from '@/app/components/VideoPreview';
@@ -93,7 +101,7 @@ export default function Home() {
           end_date_time: event.end_date_time,
           title: event.title || 'Predavanje',
           description: event.description || 'Opis ni na voljo',
-          lecturer: event.lecturer || 'Predavatelj',
+          lecturer: event.lecturer || 'Predavatelj',//spremenit na id od uporabnika za ime
           fk_id_predmet: event.predmet?.id,
           predmet_naziv: event.predmet?.naziv
         }))

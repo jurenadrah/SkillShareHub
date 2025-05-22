@@ -1,0 +1,301 @@
+.tutor-profile-container {
+  max-width: 800px;
+  margin: 2rem auto;
+  padding: 2rem;
+  font-family: Arial, sans-serif;
+  color: #333;
+  background-color: white;
+  border-radius: 10px;
+  box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+  border: 1px solid #e0e0e0;
+}
+
+.profile-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  margin-bottom: 2rem;
+  padding-bottom: 1.5rem;
+  border-bottom: 1px solid #f0f0f0;
+}
+
+.profile-info {
+  flex: 1;
+  margin-right: 2rem;
+}
+
+.profile-title {
+  font-size: 2rem;
+  margin-bottom: 1rem;
+  color: #2c3e50;
+}
+
+.profile-detail {
+  margin-bottom: 1.5rem;
+}
+
+.profile-detail label {
+  display: block;
+  font-weight: 600;
+  margin-bottom: 0.5rem;
+  color: #555;
+}
+
+.profile-detail input,
+.profile-detail textarea {
+  width: 100%;
+  padding: 0.75rem;
+  border-radius: 6px;
+  border: 1px solid #ddd;
+  font-size: 1rem;
+  font-family: inherit;
+  background-color: #f9f9f9;
+  transition: border-color 0.3s;
+}
+
+.profile-detail input:focus,
+.profile-detail textarea:focus {
+  outline: none;
+  border-color: #4a6fa5;
+  background-color: white;
+}
+
+.profile-detail textarea {
+  min-height: 100px;
+  resize: vertical;
+}
+
+.file-upload label {
+  display: block;
+  margin-bottom: 0.5rem;
+  font-weight: 600;
+  color: #555;
+}
+
+.file-upload input[type="file"] {
+  font-size: 1rem;
+  padding: 0.5rem 0;
+}
+
+.mt-4 {
+  margin-top: 1.5rem;
+}
+
+.edit-button {
+  background-color: #4a6fa5;
+  color: white;
+  padding: 0.75rem 1.5rem;
+  border-radius: 6px;
+  border: 1px solid #3a5a8f;
+  cursor: pointer;
+  font-weight: 600;
+  transition: all 0.2s;
+  margin-right: 1rem;
+}
+
+.edit-button:hover {
+  background-color: #3a5a8f;
+}
+
+.save-button {
+  background-color: #5cb85c;
+  color: white;
+  padding: 0.75rem 1.5rem;
+  border-radius: 6px;
+  border: 1px solid #4cae4c;
+  cursor: pointer;
+  font-weight: 600;
+  transition: all 0.2s;
+}
+
+.save-button:hover {
+  background-color: #4cae4c;
+}
+
+.error-message {
+  margin-top: 1rem;
+  padding: 0.75rem;
+  color: #b00020;
+  background-color: #ffebee;
+  border-radius: 6px;
+  border: 1px solid #ffcdd2;
+  font-weight: 600;
+}
+
+.success-message {
+  margin-top: 1rem;
+  padding: 0.75rem;
+  color: #2e7d32;
+  background-color: #e8f5e9;
+  border-radius: 6px;
+  border: 1px solid #c8e6c9;
+  font-weight: 600;
+}
+
+.profile-image-container {
+  width: 150px;
+  height: 150px;
+  border-radius: 50%;
+  overflow: hidden;
+  border: 3px solid white;
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.1);
+  flex-shrink: 0;
+  background-color: #f5f5f5;
+}
+
+.profile-image {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.reviews-section {
+  border-top: 1px solid #f0f0f0;
+  padding-top: 1.5rem;
+}
+
+.reviews-section h2 {
+  margin-bottom: 1.5rem;
+  color: #2c3e50;
+}
+
+.review {
+  margin-bottom: 1.5rem;
+  padding: 1.5rem;
+  border-radius: 8px;
+  background-color: #f9f9f9;
+  border: 1px solid #eee;
+}
+
+.review p {
+  margin: 0.5rem 0;
+}
+
+.review strong {
+  color: #555;
+}
+/* Dodaj te stile k obstoječim */
+
+.section {
+  margin-top: 2rem;
+  padding: 1.5rem;
+  background-color: #f9f9f9;
+  border-radius: 8px;
+  border: 1px solid #eee;
+}
+
+.section-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 1rem;
+}
+
+.predmeti-edit, .urnik-edit {
+  background-color: white;
+  padding: 1.5rem;
+  border-radius: 8px;
+  border: 1px solid #ddd;
+}
+
+.predmeti-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(250px, 1fr));
+  gap: 1.5rem;
+  margin-bottom: 1.5rem;
+}
+
+.tip-predmeta {
+  background-color: #f5f5f5;
+  padding: 1rem;
+  border-radius: 6px;
+}
+
+.predmeti-list {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+
+.predmet-checkbox {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.5rem;
+  border-radius: 4px;
+  transition: background-color 0.2s;
+}
+
+.predmet-checkbox:hover {
+  background-color: #eee;
+}
+
+.nov-predmet {
+  margin-top: 2rem;
+  padding: 1rem;
+  background-color: #f0f7ff;
+  border-radius: 6px;
+  border: 1px solid #d0e3ff;
+}
+
+.form-group {
+  margin-bottom: 1rem;
+}
+
+.form-group label {
+  display: block;
+  margin-bottom: 0.25rem;
+  font-weight: 600;
+}
+
+.form-group input,
+.form-group select,
+.form-group textarea {
+  width: 100%;
+  padding: 0.5rem;
+  border: 1px solid #ddd;
+  border-radius: 4px;
+}
+
+.form-actions {
+  margin-top: 1.5rem;
+  display: flex;
+  justify-content: flex-end;
+}
+
+.urnik-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+  gap: 1rem;
+}
+
+.urnik-dan {
+  background-color: white;
+  padding: 1rem;
+  border-radius: 6px;
+  border: 1px solid #eee;
+}
+
+.dogodek-item {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 1rem;
+  margin-bottom: 0.5rem;
+  background-color: white;
+  border-radius: 6px;
+  border: 1px solid #eee;
+}
+
+.delete-button {
+  background-color: #ff4444;
+  color: white;
+  border: none;
+  padding: 0.5rem 1rem;
+  border-radius: 4px;
+  cursor: pointer;
+}
+
+.delete-button:hover {
+  background-color: #cc0000;
+}

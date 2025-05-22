@@ -90,6 +90,34 @@ export default function StudentProfile() {
     }
   }
 
+  const handleImageUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0]
+    if (!file || !uporabnik) return
+
+    const fileExt = file.name.split('.').pop()
+    const filePath = `profilne/${uporabnik.id}-${Date.now()}.${fileExt}`
+
+    const { error: uploadError } = await supabase
+      .storage
+      .from('profilne-slike') // <- Zamenjaj z imenom tvojega bucket-a
+      .upload(filePath, file, {
+        cacheControl: '3600',
+        upsert: true,
+      })
+
+    if (uploadError) {
+      setError('Napaka pri nalaganju slike: ' + uploadError.message)
+      return
+    }
+
+    const { data } = supabase
+      .storage
+      .from('profilne-slike')
+      .getPublicUrl(filePath)
+
+    setProfilnaSlika(data.publicUrl)
+  }
+
   if (loading) return <p>Nalaganje...</p>
   if (!uporabnik) return <p>Uporabnik ni prijavljen.</p>
 
@@ -134,7 +162,7 @@ export default function StudentProfile() {
           </div>
         </div>
 
-        {/* Desna stran (profilna slika + vnos URL-ja če je editMode) */}
+        {/* Desna stran (profilna slika) */}
         <div className="flex flex-col items-center">
           {profilnaSlika ? (
             <img
@@ -148,13 +176,15 @@ export default function StudentProfile() {
             </div>
           )}
           {editMode && (
-            <input
-              type="text"
-              placeholder="URL slike"
-              value={profilnaSlika}
-              onChange={(e) => setProfilnaSlika(e.target.value)}
-              className="w-full border rounded p-2 mt-2"
-            />
+            <>
+              <input
+                type="file"
+                accept="image/*"
+                onChange={handleImageUpload}
+                className="w-full border rounded p-2 mt-2"
+              />
+              <p className="text-sm text-gray-600 mt-1">Izberi sliko s svojega računalnika</p>
+            </>
           )}
         </div>
       </div>

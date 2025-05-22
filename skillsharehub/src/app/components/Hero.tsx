@@ -3,7 +3,7 @@ export default function Hero() {
     return (
       <section className="relative w-full h-[500px] overflow-hidden">
         <Image
-          src="/main.photo.jpg"
+          src="/main_photo.jpg"
           width={1200}
           height={550}
           style={{

@@ -45,18 +45,29 @@ export default function PostsPage() {
   const [appliedFilterToDate, setAppliedFilterToDate] = useState('');
 
   const [allUsers, setAllUsers] = useState<Uporabniki[]>([]);
+  const [postedUsers, setPostedUsers] = useState<Uporabniki[]>([]);
 
     useEffect(() => {
-    async function fetchUsers() {
-        const { data: usersData, error: usersError } = await supabase
-        .from('Uporabniki')
-        .select('id, ime, priimek');
-        if (!usersError && usersData) {
-        setAllUsers(usersData);
-        }
+    async function fetchAllUsers() {
+      const { data } = await supabase.from('Uporabniki').select('id, ime, priimek');
+      if (data) setAllUsers(data);
     }
-    fetchUsers();
-    }, []);
+
+    async function fetchPostedUsers() {
+      const { data: postData } = await supabase.from('Posti').select('fk_uporabniki_id');
+      const ids = [...new Set(postData?.map(p => p.fk_uporabniki_id) || [])];
+      if (ids.length > 0) {
+        const { data: users } = await supabase
+          .from('Uporabniki')
+          .select('id, ime, priimek')
+          .in('id', ids);
+        if (users) setPostedUsers(users);
+      }
+    }
+
+    fetchAllUsers();
+    fetchPostedUsers();
+  }, []);
 
   // Fetch posts when applied filters change
   useEffect(() => {
@@ -132,6 +143,12 @@ export default function PostsPage() {
     const userIds = [...new Set(postsData.map(post => post.fk_uporabniki_id))];
     if (userIds.length === 0) {
       setUsersMap({});
+      const newUsersMap: Record<string, Uporabniki> = {};
+      const selectedUser = allUsers.find(u => u.id.toString() === appliedFilterUserId);
+      if(selectedUser){
+        newUsersMap[appliedFilterUserId] = selectedUser;
+      }
+      setUsersMap(newUsersMap);
       setLoading(false);
       return;
     }
@@ -147,26 +164,13 @@ export default function PostsPage() {
       setLoading(false);
       return;
     }
-
+    
     // Create map from user ID to user object
     const newUsersMap: Record<string, Uporabniki> = {};
     usersData.forEach(user => {
       newUsersMap[user.id] = user;
     });
-
-    console.log(appliedFilterUserId)
-    console.log(newUsersMap[filterUserIdInput])
-    // Add selected user to usersMap if missing (to keep dropdown option)
-    if (filterUserIdInput && !newUsersMap[filterUserIdInput]) {
-        // Fetch user by id (or from previously fetched currentUser)
-        console.log("ok1")
-        const selectedUser = allUsers.find(u => u.id.toString() === appliedFilterUserId);
-        if (selectedUser) {
-            console.log("ok2")
-            newUsersMap[appliedFilterUserId] = selectedUser;
-        }
-    }
-
+    
     setUsersMap(newUsersMap);
     setLoading(false);
   }

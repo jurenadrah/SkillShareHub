@@ -64,6 +64,10 @@ export default function Navbar() {
 
   }
 
+  const handlePostsClick = async () => {
+    router.push('/posts')
+  }
+
   return (
     <>
       <nav className="flex justify-between items-center px-6 py-4 bg-white shadow-md">
@@ -76,6 +80,17 @@ export default function Navbar() {
               type="button"
             >
               Moj profil
+            </button>
+          ) : (
+            <span className="text-gray-400 cursor-not-allowed">Moj profil</span>
+          )}
+          {user ? (
+            <button
+              onClick={handlePostsClick}
+              className="text-blue-600 hover:underline"
+              type="button"
+            >
+              Posti
             </button>
           ) : (
             <span className="text-gray-400 cursor-not-allowed">Moj profil</span>

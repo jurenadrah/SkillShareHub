@@ -169,7 +169,7 @@ export default function Home() {
 
   return (
     <main className="bg-[#fefefe]">
-      <Navbar />
+      
       <div className="bg-orange-200 text-center py-3 font-semibold text-xl">
         Dobrodošli na SkillShareHub
       </div>

@@ -164,7 +164,7 @@ export default function PostsPage() {
       setLoading(false);
       return;
     }
-    
+
     // Create map from user ID to user object
     const newUsersMap: Record<string, Uporabniki> = {};
     usersData.forEach(user => {
@@ -194,6 +194,19 @@ export default function PostsPage() {
       alert('Napaka pri objavi.');
     }
   }
+
+  async function handleDeletePost(postId: string) {
+  const confirmDelete = confirm('Ali ste prepričani, da želite izbrisati to objavo?');
+  if (!confirmDelete) return;
+
+  const { error } = await supabase.from('Posti').delete().eq('id', postId);
+
+  if (error) {
+    alert('Napaka pri brisanju objave.');
+  } else {
+    fetchPostsAndUsers();
+  }
+}
 
   if (loading) return <p>Loading posts...</p>;
 
@@ -366,6 +379,7 @@ export default function PostsPage() {
       <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
         {posts.map(post => {
           const user = usersMap[post.fk_uporabniki_id];
+          const isAuthor = currentUser?.id===parseInt(post.fk_uporabniki_id)
           return (
             <div
               key={post.id}
@@ -377,13 +391,35 @@ export default function PostsPage() {
                 border: '1px solid #eaeaea',
               }}
             >
-              <p style={{ marginBottom: 6, fontWeight: '700', fontSize: '1.05rem' }}>
-                {user ? `${user.ime} ${user.priimek}` : 'Neznan uporabnik'}
-              </p>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                <p style={{ marginBottom: 6, fontWeight: '700', fontSize: '1.05rem' }}>
+                    {user ? `${user.ime} ${user.priimek}` : 'Neznan uporabnik'}
+                </p>
+                {isAuthor && (
+                    <div>
+                        <button
+                            onClick={() => handleDeletePost(post.id)}
+                            title="Izbriši objavo"
+                            style={{
+                            background: 'transparent',
+                            border: 'none',
+                            cursor: 'pointer',
+                            fontSize: '1.1rem',
+                            color: '#e74c3c',
+                            marginLeft: '1rem'
+                            }}
+                        >
+                            🗑️
+                        </button>
+                    </div>
+                )}
+            </div>
               <p style={{ lineHeight: 1.5, marginBottom: 8, whiteSpace: 'pre-wrap' }}>{post.content}</p>
               <small style={{ color: '#666', fontSize: '0.85rem' }}>
                 {new Date(post.created_at).toLocaleString()}
               </small>
+            
+                        
             </div>
           );
         })}

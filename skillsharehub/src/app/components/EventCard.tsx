@@ -40,93 +40,94 @@ export default function EventCard({ event, user, isJoined, onJoinSuccess }: Even
     })
   }
 
-  const handleJoinEvent = async () => {
-    if (!user || isJoining) return
+const handleJoinEvent = async () => {
+  if (!user || isJoining) return
 
-    setIsJoining(true)
-    setMessage(null)
-    
+  setIsJoining(true)
+  setMessage(null)
+  
+  try {
+    // Check if already joined
+    if (isJoined) {
+      setMessage({ type: 'info', text: 'Že ste pridruženi temu dogodku' })
+      return
+    }
+
+    // Insert into UserEvents table
+    const { error: insertError } = await supabase
+      .from('UserEvents')
+      .insert([{
+        user_id: user.id,
+        event_id: event.id
+      }])
+
+    if (insertError) throw insertError
+
+    // Try to sync with Google Calendar if connected
+    let googleEventId = null
     try {
-      // Check if already joined
-      if (isJoined) {
-        setMessage({ type: 'info', text: 'Že ste pridruženi temu dogodku' })
-        return
-      }
+      const { data: { session } } = await supabase.auth.getSession()
+      const accessToken = session?.provider_token // This is the Google access token
 
-      // Insert into UserEvents table
-      const { error: insertError } = await supabase
+      if (accessToken) {
+        googleEventId = await syncWithGoogleCalendar(event, accessToken)
+      }
+    } catch (googleError) {
+      console.warn('Google Calendar sync failed:', googleError)
+      // Continue anyway - the event is still saved locally
+    }
+
+    // Update Google Calendar event ID if successful
+    if (googleEventId) {
+      await supabase
         .from('UserEvents')
-        .insert([{
-          user_id: user.id,
-          event_id: event.id
-        }])
-
-      if (insertError) throw insertError
-
-      // Try to sync with Google Calendar if connected
-      let googleEventId = null
-      try {
-        const { data: { user: authUser } } = await supabase.auth.getUser()
-        const hasGoogleConnected = authUser?.app_metadata?.providers?.includes('google')
-
-        if (hasGoogleConnected) {
-          googleEventId = await syncWithGoogleCalendar(event)
-        }
-      } catch (googleError) {
-        console.warn('Google Calendar sync failed:', googleError)
-        // Continue anyway - the event is still saved locally
-      }
-
-      // Update Google Calendar event ID if successful
-      if (googleEventId) {
-        await supabase
-          .from('UserEvents')
-          .update({ google_calendar_event_id: googleEventId })
-          .eq('user_id', user.id)
-          .eq('event_id', event.id)
-      }
-
-      // Notify parent component
-      onJoinSuccess(event.id)
-      
-      setMessage({ 
-        type: 'success', 
-        text: googleEventId ? 'Dodano v osebni in Google koledar!' : 'Dodano v osebni koledar!'
-      })
-
-    } catch (error) {
-      console.error('Error joining event:', error)
-      setMessage({ type: 'error', text: 'Napaka pri dodajanju dogodka' })
-    } finally {
-      setIsJoining(false)
-
-      // Clear message after 3 seconds
-      setTimeout(() => {
-        setMessage(null)
-      }, 3000)
-    }
-  }
-
-  const syncWithGoogleCalendar = async (event: Event): Promise<string> => {
-    const googleEvent = {
-      summary: event.title,
-      description: `${event.description}\n\nPredavatelj: ${event.lecturer}`,
-      start: {
-        dateTime: event.start_date_time,
-        timeZone: 'Europe/Ljubljana'
-      },
-      end: {
-        dateTime: event.end_date_time,
-        timeZone: 'Europe/Ljubljana'
-      },
-      source: {
-        title: 'SkillShareHub',
-        url: window.location.origin
-      }
+        .update({ google_calendar_event_id: googleEventId })
+        .eq('user_id', user.id)
+        .eq('event_id', event.id)
     }
 
-    return await GoogleCalendarAPI.createEvent(googleEvent)
+    // Notify parent component
+    onJoinSuccess(event.id)
+    
+    setMessage({ 
+      type: 'success', 
+      text: googleEventId ? 'Dodano v osebni in Google koledar!' : 'Dodano v osebni koledar!'
+    })
+
+  } catch (error) {
+    console.error('Error joining event:', error)
+    setMessage({ type: 'error', text: 'Napaka pri dodajanju dogodka' })
+  } finally {
+    setIsJoining(false)
+
+    // Clear message after 3 seconds
+    setTimeout(() => {
+      setMessage(null)
+    }, 3000)
   }
+}
+
+// Update syncWithGoogleCalendar to accept the token
+const syncWithGoogleCalendar = async (event: Event, accessToken: string): Promise<string> => {
+  const googleEvent = {
+    summary: event.title,
+    description: `${event.description}\n\nPredavatelj: ${event.lecturer}`,
+    start: {
+      dateTime: event.start_date_time,
+      timeZone: 'Europe/Ljubljana'
+    },
+    end: {
+      dateTime: event.end_date_time,
+      timeZone: 'Europe/Ljubljana'
+    },
+    source: {
+      title: 'SkillShareHub',
+      url: window.location.origin
+    }
+  }
+  console.log('Attempting Google Calendar sync', { event });
+  return await GoogleCalendarAPI.createEvent(googleEvent, accessToken)
+}
 
   return (
     <div className="mb-3 bg-white p-4 rounded-lg shadow-sm border-l-4 border-orange-400 hover:shadow-md transition-shadow">

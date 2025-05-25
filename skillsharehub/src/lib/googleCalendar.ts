@@ -26,9 +26,13 @@ export class GoogleCalendarAPI {
     return session.provider_token
   }
 
-  static async createEvent(event: GoogleCalendarEvent): Promise<string> {
-    const accessToken = await this.getAccessToken()
-    
+  // Accept accessToken as an optional argument
+  static async createEvent(event: GoogleCalendarEvent, accessToken?: string): Promise<string> {
+    // Use the provided token or fetch it if not provided
+    if (!accessToken) {
+      accessToken = await this.getAccessToken()
+    }
+
     const response = await fetch('https://www.googleapis.com/calendar/v3/calendars/primary/events', {
       method: 'POST',
       headers: {

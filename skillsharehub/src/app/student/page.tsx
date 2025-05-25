@@ -3,6 +3,7 @@
 import { useEffect, useState } from 'react'
 import { supabase } from '@/lib/supabase'
 import MyEvents from '@/app/components/MyEvents'
+import CalendarApp from '@/app/components/CalendarApp'
 
 type Uporabnik = {
   id: number
@@ -51,6 +52,9 @@ export default function StudentProfile() {
 
   const [error, setError] = useState<string | null>(null)
   const [success, setSuccess] = useState<string | null>(null)
+
+  // State for calendar view toggle
+  const [showCalendar, setShowCalendar] = useState(false)
 
   useEffect(() => {
     const fetchProfile = async () => {
@@ -232,7 +236,7 @@ export default function StudentProfile() {
   if (!uporabnik) return <p>Uporabnik ni prijavljen.</p>
 
   return (
-    <div className="p-6 max-w-4xl mx-auto bg-[#fdf6e3] rounded shadow">
+    <div className="p-6 max-w-7xl mx-auto bg-[#fdf6e3] rounded shadow">
       <h1 className="text-2xl font-bold mb-6">Profil učenca</h1>
 
       {error && <div className="mb-4 p-3 bg-red-100 text-red-700 rounded border border-red-300">{error}</div>}
@@ -396,7 +400,31 @@ export default function StudentProfile() {
         {/* Right Column - My Events */}
         <div>
           <div className="bg-white rounded-lg shadow p-6">
-            <h2 className="text-xl font-bold mb-4">Moji dogodki</h2>
+            <div className="flex items-center justify-between mb-4">
+              <h2 className="text-xl font-bold">Moji dogodki</h2>
+              <div className="flex gap-2">
+                <button
+                  onClick={() => setShowCalendar(false)}
+                  className={`px-3 py-1 text-sm rounded ${
+                    !showCalendar 
+                      ? 'bg-blue-600 text-white' 
+                      : 'bg-gray-200 text-gray-700 hover:bg-gray-300'
+                  }`}
+                >
+                  Seznam
+                </button>
+                <button
+                  onClick={() => setShowCalendar(true)}
+                  className={`px-3 py-1 text-sm rounded ${
+                    showCalendar 
+                      ? 'bg-blue-600 text-white' 
+                      : 'bg-gray-200 text-gray-700 hover:bg-gray-300'
+                  }`}
+                >
+                  Koledar
+                </button>
+              </div>
+            </div>
             
             {eventsLoading ? (
               <div className="text-center py-8">
@@ -404,11 +432,19 @@ export default function StudentProfile() {
                 <p className="mt-2 text-gray-600">Nalaganje dogodkov...</p>
               </div>
             ) : (
-              <MyEvents 
-                userEvents={userEvents}
-                onEventRemoved={handleEventRemoved}
-                hasGoogleConnected={hasGoogleConnected}
-              />
+              <>
+                {!showCalendar ? (
+                  <MyEvents 
+                    userEvents={userEvents}
+                    onEventRemoved={handleEventRemoved}
+                    hasGoogleConnected={hasGoogleConnected}
+                  />
+                ) : (
+                  <div className="calendar-container">
+                    <CalendarApp userEvents={userEvents} />
+                  </div>
+                )}
+              </>
             )}
           </div>
         </div>

@@ -28,18 +28,13 @@ export default function Navbar() {
     }
   }, [])
 
-  const signInWithGoogle = async () => {
-    await supabase.auth.signInWithOAuth({
-      provider: 'google',
-      options: {
-        scopes:
-          'openid email profile https://www.googleapis.com/auth/calendar.events https://www.googleapis.com/auth/calendar.readonly',
-      },
-    })
-  }
-
   const signOut = async () => {
     await supabase.auth.signOut()
+    router.push('/')
+  }
+
+  const handleHomeClick = () => {
+    router.push('/')
   }
 
   const handleProfileClick = async () => {
@@ -99,7 +94,13 @@ export default function Navbar() {
           <a href="#" className="text-gray-700 hover:underline">Contact</a>
         </div>
 
-        <div className="text-xl font-bold text-center">📷 SkillShareHub</div>
+        <button 
+          onClick={handleHomeClick}
+          className="text-xl font-bold text-center hover:text-indigo-600 transition-colors cursor-pointer"
+          type="button"
+        >
+          📷 SkillShareHub
+        </button>
 
         <div className="flex space-x-4 items-center">
           <span>🔔</span>

@@ -1,26 +1,19 @@
 'use client'
-
-
-
 /// v eventu odstrani stolpec lecturer pa pridobivaj iz foreign key uporabnika, ime tutorja
-
-
-
-
-
-import Navbar from '@/app/components/Navbar';
-import Hero from '@/app/components/Hero';
-import VideoPreview from '@/app/components/VideoPreview';
-import { supabase } from '@/lib/supabase';
 import { useEffect, useState } from 'react'
-import { format, startOfWeek, addDays, isSameDay, parseISO, isWithinInterval } from 'date-fns';
-import { sl } from 'date-fns/locale';
+import { supabase } from '@/lib/supabase'
+import { format, startOfWeek, addDays, isSameDay, parseISO, isWithinInterval } from 'date-fns'
+import { sl } from 'date-fns/locale'
+import EventCard from './EventCard'
+import Navbar from './Navbar'
+import Hero from './Hero'
+import VideoPreview from './VideoPreview'
 
 // Define types based on your database schema
 type Uporabnik = {
   id: number
-  Ime: string
-  Priimek: string
+  ime: string
+  priimek: string
   email: string
   tutor?: boolean
 }
@@ -34,13 +27,18 @@ type Event = {
   id: number
   fk_id_uporabnik: number
   day_of_week: string
-  start_date_time: string // Matches Supabase timestamp field
-  end_date_time: string   // Matches Supabase timestamp field
+  start_date_time: string
+  end_date_time: string
   title: string
   description: string
   lecturer: string
   fk_id_predmet?: number
   predmet_naziv?: string
+}
+
+type User = {
+  id: number
+  email: string
 }
 
 export default function Home() {
@@ -51,13 +49,40 @@ export default function Home() {
   const [selectedPredmet, setSelectedPredmet] = useState<number | null>(null)
   const [loading, setLoading] = useState(true)
   const [currentWeekStart, setCurrentWeekStart] = useState<Date>(startOfWeek(new Date(), { weekStartsOn: 1 }))
+  
+  // User and events state
+  const [user, setUser] = useState<User | null>(null)
+  const [joinedEvents, setJoinedEvents] = useState<Set<number>>(new Set())
 
-  // Calculate the days of the current week
-  const weekDays = Array.from({ length: 5 }).map((_, index) => addDays(currentWeekStart, index));
+  // Calculate the days of the current week (Monday to Sunday = 7 days)
+  const weekDays = Array.from({ length: 7 }).map((_, index) => addDays(currentWeekStart, index))
 
   useEffect(() => {
     const fetchData = async () => {
       setLoading(true)
+      
+      // Get current user
+      const { data: { user: authUser } } = await supabase.auth.getUser()
+      if (authUser) {
+        const { data: userData } = await supabase
+          .from('Uporabniki')
+          .select('id, email')
+          .eq('email', authUser.email)
+          .single()
+        
+        if (userData) {
+          setUser(userData)
+          // Fetch user's joined events
+          const { data: joinedEventsData } = await supabase
+            .from('UserEvents')
+            .select('event_id')
+            .eq('user_id', userData.id)
+          
+          if (joinedEventsData) {
+            setJoinedEvents(new Set(joinedEventsData.map(ue => ue.event_id)))
+          }
+        }
+      }
       
       // Fetch users
       const { data: userData, error: userError } = await supabase
@@ -92,16 +117,16 @@ export default function Home() {
       if (eventError) {
         console.error('Event fetch error:', eventError)
       } else {
-        // Transform the data to match our updated Event type
+        // Transform the data to match our Event type
         const formattedEvents = eventData.map(event => ({
           id: event.id,
           fk_id_uporabnik: event.fk_id_uporabnik,
-          day_of_week: format(parseISO(event.start_date_time), 'EEEE', { locale: sl }), // Generate day from datetime
+          day_of_week: format(parseISO(event.start_date_time), 'EEEE', { locale: sl }),
           start_date_time: event.start_date_time,
           end_date_time: event.end_date_time,
           title: event.title || 'Predavanje',
           description: event.description || 'Opis ni na voljo',
-          lecturer: event.lecturer || 'Predavatelj',//spremenit na id od uporabnika za ime
+          lecturer: event.lecturer || 'Predavatelj',
           fk_id_predmet: event.predmet?.id,
           predmet_naziv: event.predmet?.naziv
         }))
@@ -116,25 +141,25 @@ export default function Home() {
     fetchData()
   }, [])
 
-    // Filter events when selected predmet changes or when week changes
+  // Filter events when selected predmet changes or when week changes
   useEffect(() => {
-    // Get the end date of the current displayed week
-    const weekEnd = addDays(currentWeekStart, 4); // Friday (5 days total)
+    // Get the end date of the current displayed week (Sunday)
+    const weekEnd = addDays(currentWeekStart, 6) // Sunday (7 days total)
     
     // Filter events that fall within the current week
     const eventsInWeek = events.filter(event => {
-      const eventDate = parseISO(event.start_date_time);
+      const eventDate = parseISO(event.start_date_time)
       return isWithinInterval(eventDate, { 
         start: currentWeekStart,
         end: addDays(weekEnd, 1) // Including the end day fully
-      });
-    });
+      })
+    })
     
     // Then apply the predmet filter if selected
     if (selectedPredmet === null) {
-      setFilteredEvents(eventsInWeek);
+      setFilteredEvents(eventsInWeek)
     } else {
-      setFilteredEvents(eventsInWeek.filter(event => event.fk_id_predmet === selectedPredmet));
+      setFilteredEvents(eventsInWeek.filter(event => event.fk_id_predmet === selectedPredmet))
     }
   }, [selectedPredmet, events, currentWeekStart])
 
@@ -146,15 +171,20 @@ export default function Home() {
 
   // Handle week navigation
   const goToPreviousWeek = () => {
-    setCurrentWeekStart(prev => addDays(prev, -7));
+    setCurrentWeekStart(prev => addDays(prev, -7))
   }
 
   const goToNextWeek = () => {
-    setCurrentWeekStart(prev => addDays(prev, 7));
+    setCurrentWeekStart(prev => addDays(prev, 7))
   }
 
   const goToCurrentWeek = () => {
-    setCurrentWeekStart(startOfWeek(new Date(), { weekStartsOn: 1 }));
+    setCurrentWeekStart(startOfWeek(new Date(), { weekStartsOn: 1 }))
+  }
+
+  // Handle successful event join
+  const handleJoinSuccess = (eventId: number) => {
+    setJoinedEvents(prev => new Set([...prev, eventId]))
   }
 
   // Format date for display
@@ -164,7 +194,7 @@ export default function Home() {
         <div className="font-bold">{format(date, 'EEEE', { locale: sl })}</div>
         <div className="text-sm">{format(date, 'd. MMMM', { locale: sl })}</div>
       </>
-    );
+    )
   }
 
   return (
@@ -185,10 +215,11 @@ export default function Home() {
 
       {/* URNIK */}
       <section className="py-12 bg-white">
-        <div className="max-w-6xl mx-auto px-4">
+        <div className="max-w-7xl mx-auto px-4">
           <h2 className="text-3xl font-bold mb-2 text-center">Tedenski Urnik</h2>
           <p className="text-gray-600 mb-6 max-w-2xl mx-auto text-center">
             Tukaj lahko najdeš naš tedenski urnik z delavnicami, predavanji in urjenji.
+            {user && " Klikni 'Pridruži se' za dodajanje v svoj koledar."}
           </p>
           
           {/* Week navigation */}
@@ -204,7 +235,7 @@ export default function Home() {
             
             <div className="text-center">
               <p className="font-medium">
-                {format(currentWeekStart, 'd. MMMM', { locale: sl })} - {format(addDays(currentWeekStart, 4), 'd. MMMM yyyy', { locale: sl })}
+                {format(currentWeekStart, 'd. MMMM', { locale: sl })} - {format(addDays(currentWeekStart, 6), 'd. MMMM yyyy', { locale: sl })}
               </p>
               <button 
                 onClick={goToCurrentWeek}
@@ -251,48 +282,46 @@ export default function Home() {
               <p className="mt-2 text-gray-600">Nalaganje urnika...</p>
             </div>
           ) : (
-            <div className="grid grid-cols-1 md:grid-cols-5 gap-4">
+            <div className="grid grid-cols-1 md:grid-cols-7 gap-4">
               {weekDays.map((day) => {
                 // Filter events for this specific day of the week
                 const dayEvents = filteredEvents.filter(event => {
-                  const eventDate = parseISO(event.start_date_time);
-                  return isSameDay(eventDate, day);
-                });
+                  const eventDate = parseISO(event.start_date_time)
+                  return isSameDay(eventDate, day)
+                })
                 
                 // Sort events by start time
                 dayEvents.sort((a, b) => 
                   parseISO(a.start_date_time).getTime() - parseISO(b.start_date_time).getTime()
-                );
+                )
                 
                 // Check if this day is today
-                const isToday = isSameDay(day, new Date());
+                const isToday = isSameDay(day, new Date())
+                
+                // Check if this day is weekend (Saturday or Sunday)
+                const dayOfWeek = day.getDay()
+                const isWeekend = dayOfWeek === 0 || dayOfWeek === 6
                 
                 return (
                   <div key={format(day, 'yyyy-MM-dd')} className="flex flex-col">
-                    <h3 className={`font-bold text-lg text-center p-2 rounded-t-lg ${isToday ? 'bg-orange-300' : 'bg-orange-200'}`}>
+                    <h3 className={`font-bold text-lg text-center p-2 rounded-t-lg ${
+                      isToday ? 'bg-orange-300' : 
+                      isWeekend ? 'bg-blue-200' : 'bg-orange-200'
+                    }`}>
                       {formatDateHeader(day)}
                     </h3>
-                    <div className="flex-grow bg-orange-50 rounded-b-lg p-2 min-h-48">
+                    <div className={`flex-grow rounded-b-lg p-2 min-h-48 ${
+                      isWeekend ? 'bg-blue-50' : 'bg-orange-50'
+                    }`}>
                       {dayEvents.length > 0 ? (
                         dayEvents.map((event) => (
-                          <div 
-                            key={event.id} 
-                            className="mb-3 bg-white p-3 rounded-lg shadow-sm border-l-4 border-orange-400 hover:shadow-md transition-shadow"
-                          >
-                            <p className="font-semibold">{event.title}</p>
-                            <p className="text-sm text-gray-700">{event.description}</p>
-                            <p className="mt-1 text-sm italic">{event.lecturer}</p>
-                            <div className="flex justify-between mt-1">
-                              <p className="text-xs bg-gray-100 px-2 py-1 rounded">
-                                {format(parseISO(event.start_date_time), 'HH:mm')} - {format(parseISO(event.end_date_time), 'HH:mm')}
-                              </p>
-                              {event.predmet_naziv && (
-                                <p className="text-xs bg-orange-100 px-2 py-1 rounded">
-                                  {event.predmet_naziv}
-                                </p>
-                              )}
-                            </div>
-                          </div>
+                          <EventCard
+                            key={event.id}
+                            event={event}
+                            user={user}
+                            isJoined={joinedEvents.has(event.id)}
+                            onJoinSuccess={handleJoinSuccess}
+                          />
                         ))
                       ) : (
                         <p className="text-center text-gray-500 text-sm py-4">
@@ -303,6 +332,18 @@ export default function Home() {
                   </div>
                 )
               })}
+            </div>
+          )}
+
+          {/* Login prompt for non-authenticated users */}
+          {!user && (
+            <div className="mt-8 text-center p-6 bg-blue-50 rounded-lg border border-blue-200">
+              <p className="text-blue-800 mb-2">
+                <svg className="h-5 w-5 inline mr-2" fill="currentColor" viewBox="0 0 20 20">
+                  <path fillRule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7-4a1 1 0 11-2 0 1 1 0 012 0zM9 9a1 1 0 000 2v3a1 1 0 001 1h1a1 1 0 100-2v-3a1 1 0 00-1-1H9z" clipRule="evenodd" />
+                </svg>
+                Prijavite se za dodajanje dogodkov v vaš osebni koledar
+              </p>
             </div>
           )}
         </div>
@@ -323,7 +364,7 @@ export default function Home() {
                 .filter(user => user.tutor)
                 .map((user) => (
                   <div key={user.id} className="bg-gray-50 p-4 rounded-lg shadow-sm">
-                    <p className="font-medium">{user.Ime} {user.Priimek}</p>
+                    <p className="font-medium">{user.ime} {user.priimek}</p>
                     <p className="text-sm text-gray-600">{user.email}</p>
                   </div>
                 ))}
@@ -394,5 +435,5 @@ export default function Home() {
         </div>
       </section>
     </main>
-  );
+  )
 }

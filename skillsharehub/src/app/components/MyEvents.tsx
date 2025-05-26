@@ -30,20 +30,123 @@ interface MyEventsProps {
 
 export default function MyEvents({ userEvents, onEventRemoved, hasGoogleConnected }: MyEventsProps) {
   const [leavingEvents, setLeavingEvents] = useState(new Set<number>())
+  const [messages, setMessages] = useState(new Map<number, { type: 'success' | 'error' | 'info', text: string }>())
+
+  // Refresh Google token
+  const refreshGoogleToken = async (): Promise<string | null> => {
+    try {
+      const { data, error } = await supabase.auth.refreshSession()
+      if (error) throw error
+      return data.session?.provider_token || null
+    } catch (error) {
+      console.error('Failed to refresh token:', error)
+      return null
+    }
+  }
+
+  // Get valid Google token
+  const getValidGoogleToken = async (): Promise<string | null> => {
+    try {
+      const { data: { session } } = await supabase.auth.getSession()
+      let accessToken = session?.provider_token
+
+      if (!accessToken) {
+        console.log('No access token found, attempting refresh...')
+        accessToken = await refreshGoogleToken()
+        return accessToken
+      }
+
+      // Check if current token is valid
+      try {
+        const response = await fetch('https://www.googleapis.com/oauth2/v1/tokeninfo', {
+          method: 'GET',
+          headers: {
+            'Authorization': `Bearer ${accessToken}`
+          }
+        })
+        
+        if (!response.ok) {
+          console.log('Token expired, refreshing...')
+          accessToken = await refreshGoogleToken()
+        }
+      } catch {
+        console.log('Token validation failed, refreshing...')
+        accessToken = await refreshGoogleToken()
+      }
+
+      return accessToken
+    } catch (error) {
+      console.error('Error getting valid token:', error)
+      return null
+    }
+  }
+
+  const setMessage = (userEventId: number, message: { type: 'success' | 'error' | 'info', text: string } | null) => {
+    setMessages(prev => {
+      const newMessages = new Map(prev)
+      if (message) {
+        newMessages.set(userEventId, message)
+      } else {
+        newMessages.delete(userEventId)
+      }
+      return newMessages
+    })
+
+    // Auto-clear after 5 seconds
+    if (message) {
+      setTimeout(() => {
+        setMessages(prev => {
+          const newMessages = new Map(prev)
+          newMessages.delete(userEventId)
+          return newMessages
+        })
+      }, 5000)
+    }
+  }
 
   const handleLeaveEvent = async (userEventId: number, eventId: number, googleEventId: string | null) => {
     if (leavingEvents.has(userEventId)) return
 
     setLeavingEvents(prev => new Set([...prev, userEventId]))
+    setMessage(userEventId, null) // Clear any existing message
     
     try {
+      let googleRemovalSuccess = true
+      let googleRemovalMessage = ''
+
       // Remove from Google Calendar if synced
       if (googleEventId && hasGoogleConnected) {
         try {
-          await GoogleCalendarAPI.deleteEvent(googleEventId)
-        } catch (googleError) {
+          const accessToken = await getValidGoogleToken()
+          
+          if (!accessToken) {
+            googleRemovalSuccess = false
+            googleRemovalMessage = 'Google povezava ni veljavna - dogodek ostaja v Google Calendar'
+          } else {
+            await GoogleCalendarAPI.deleteEvent(googleEventId, accessToken)
+            googleRemovalMessage = 'Odstranjen iz Google Calendar'
+          }
+        } catch (googleError: any) {
           console.warn('Failed to remove from Google Calendar:', googleError)
-          // Continue with local removal even if Google sync fails
+          googleRemovalSuccess = false
+          
+          if (googleError.status === 401) {
+            // Try with refreshed token
+            try {
+              const newToken = await refreshGoogleToken()
+              if (newToken) {
+                await GoogleCalendarAPI.deleteEvent(googleEventId, newToken)
+                googleRemovalSuccess = true
+                googleRemovalMessage = 'Odstranjen iz Google Calendar'
+              } else {
+                googleRemovalMessage = 'Google povezava je potekla - dogodek ostaja v Google Calendar'
+              }
+            } catch (retryError) {
+              googleRemovalMessage = 'Napaka pri odstranitvi iz Google Calendar'
+            }
+          } else {
+            googleRemovalMessage = 'Napaka pri odstranitvi iz Google Calendar'
+          }
         }
       }
 
@@ -58,8 +161,32 @@ export default function MyEvents({ userEvents, onEventRemoved, hasGoogleConnecte
       // Notify parent component
       onEventRemoved(userEventId)
 
+      // Show appropriate success message
+      if (googleEventId && hasGoogleConnected) {
+        if (googleRemovalSuccess) {
+          setMessage(userEventId, {
+            type: 'success',
+            text: 'Dogodek uspešno odstranjen iz osebnega in Google koledarja'
+          })
+        } else {
+          setMessage(userEventId, {
+            type: 'info',
+            text: `Dogodek odstranjen iz osebnega koledarja. ${googleRemovalMessage}`
+          })
+        }
+      } else {
+        setMessage(userEventId, {
+          type: 'success',
+          text: 'Dogodek uspešno odstranjen iz osebnega koledarja'
+        })
+      }
+
     } catch (error) {
       console.error('Error leaving event:', error)
+      setMessage(userEventId, {
+        type: 'error',
+        text: 'Napaka pri odstranitvi dogodka'
+      })
     } finally {
       setLeavingEvents(prev => {
         const newSet = new Set(prev)
@@ -121,6 +248,7 @@ export default function MyEvents({ userEvents, onEventRemoved, hasGoogleConnecte
           userEvent.event.end_date_time
         )
         const isLeaving = leavingEvents.has(userEvent.id)
+        const currentMessage = messages.get(userEvent.id)
         
         return (
           <div
@@ -163,6 +291,19 @@ export default function MyEvents({ userEvents, onEventRemoved, hasGoogleConnecte
                     </span>
                   )}
                 </div>
+
+                {/* Message */}
+                {currentMessage && (
+                  <div className={`mt-2 text-xs p-2 rounded ${
+                    currentMessage.type === 'success' 
+                      ? 'bg-green-50 text-green-700 border border-green-200'
+                      : currentMessage.type === 'error'
+                      ? 'bg-red-50 text-red-700 border border-red-200'
+                      : 'bg-blue-50 text-blue-700 border border-blue-200'
+                  }`}>
+                    {currentMessage.text}
+                  </div>
+                )}
               </div>
               
               <button

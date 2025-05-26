@@ -40,94 +40,121 @@ export default function EventCard({ event, user, isJoined, onJoinSuccess }: Even
     })
   }
 
-const handleJoinEvent = async () => {
-  if (!user || isJoining) return
-
-  setIsJoining(true)
-  setMessage(null)
-  
-  try {
-    // Check if already joined
-    if (isJoined) {
-      setMessage({ type: 'info', text: 'Že ste pridruženi temu dogodku' })
-      return
-    }
-
-    // Insert into UserEvents table
-    const { error: insertError } = await supabase
-      .from('UserEvents')
-      .insert([{
-        user_id: user.id,
-        event_id: event.id
-      }])
-
-    if (insertError) throw insertError
-
-    // Try to sync with Google Calendar if connected
-    let googleEventId = null
+  // Check if user has Google connected
+  const checkGoogleConnection = async (): Promise<boolean> => {
     try {
-      const { data: { session } } = await supabase.auth.getSession()
-      const accessToken = session?.provider_token // This is the Google access token
+      const { data: { user: authUser } } = await supabase.auth.getUser()
+      const hasGoogleProvider = authUser?.app_metadata?.providers?.includes('google') || false
+      
+      if (!hasGoogleProvider) return false
+      
+      // Check if we have valid tokens
+      return await GoogleCalendarAPI.checkGoogleConnection()
+    } catch (error) {
+      return false
+    }
+  }
 
-      if (accessToken) {
-        googleEventId = await syncWithGoogleCalendar(event, accessToken)
+  // Sync with Google Calendar
+  const syncWithGoogleCalendar = async (event: Event): Promise<string> => {
+    const googleEvent = {
+      summary: event.title,
+      description: `${event.description}\n\nPredavatelj: ${event.lecturer}`,
+      start: {
+        dateTime: event.start_date_time,
+        timeZone: 'Europe/Ljubljana'
+      },
+      end: {
+        dateTime: event.end_date_time,
+        timeZone: 'Europe/Ljubljana'
+      },
+      source: {
+        title: 'SkillShareHub',
+        url: window.location.origin
       }
-    } catch (googleError) {
-      console.warn('Google Calendar sync failed:', googleError)
-      // Continue anyway - the event is still saved locally
     }
 
-    // Update Google Calendar event ID if successful
-    if (googleEventId) {
-      await supabase
-        .from('UserEvents')
-        .update({ google_calendar_event_id: googleEventId })
-        .eq('user_id', user.id)
-        .eq('event_id', event.id)
-    }
+    console.log('Attempting Google Calendar sync', { event })
+    return await GoogleCalendarAPI.createEvent(googleEvent)
+  }
 
-    // Notify parent component
-    onJoinSuccess(event.id)
+  const handleJoinEvent = async () => {
+    if (!user || isJoining) return
+
+    setIsJoining(true)
+    setMessage(null)
     
-    setMessage({ 
-      type: 'success', 
-      text: googleEventId ? 'Dodano v osebni in Google koledar!' : 'Dodano v osebni koledar!'
-    })
+    try {
+      // Check if already joined
+      if (isJoined) {
+        setMessage({ type: 'info', text: 'Že ste pridruženi temu dogodku' })
+        return
+      }
 
-  } catch (error) {
-    console.error('Error joining event:', error)
-    setMessage({ type: 'error', text: 'Napaka pri dodajanju dogodka' })
-  } finally {
-    setIsJoining(false)
+      // Insert into UserEvents table first
+      const { error: insertError } = await supabase
+        .from('UserEvents')
+        .insert([{
+          user_id: user.id,
+          event_id: event.id
+        }])
 
-    // Clear message after 3 seconds
-    setTimeout(() => {
-      setMessage(null)
-    }, 3000)
-  }
-}
+      if (insertError) throw insertError
 
-// Update syncWithGoogleCalendar to accept the token
-const syncWithGoogleCalendar = async (event: Event, accessToken: string): Promise<string> => {
-  const googleEvent = {
-    summary: event.title,
-    description: `${event.description}\n\nPredavatelj: ${event.lecturer}`,
-    start: {
-      dateTime: event.start_date_time,
-      timeZone: 'Europe/Ljubljana'
-    },
-    end: {
-      dateTime: event.end_date_time,
-      timeZone: 'Europe/Ljubljana'
-    },
-    source: {
-      title: 'SkillShareHub',
-      url: window.location.origin
+      // Try to sync with Google Calendar if connected
+      let googleEventId = null
+      let syncMessage = 'Dodano v osebni koledar!'
+
+      try {
+        const hasGoogleConnected = await checkGoogleConnection()
+        
+        if (hasGoogleConnected) {
+          googleEventId = await syncWithGoogleCalendar(event)
+          syncMessage = 'Dodano v osebni in Google koledar!'
+        }
+      } catch (googleError: any) {
+        console.error('Google Calendar sync failed:', googleError)
+        
+        if (googleError.message === 'GOOGLE_AUTH_EXPIRED' || googleError.message === 'GOOGLE_NOT_CONNECTED') {
+          syncMessage = 'Dodano lokalno. Google povezava je potekla - prosimo, ponovno se povežite z Google računom.'
+          setMessage({ type: 'error', text: syncMessage })
+        } else if (googleError.message === 'GOOGLE_REFRESH_TOKEN_MISSING') {
+          syncMessage = 'Dodano lokalno. Za Google sinhronizacijo se prosimo ponovno povežite z Google računom.'
+          setMessage({ type: 'error', text: syncMessage })
+        } else {
+          syncMessage = 'Dodano v osebni koledar, vendar ni uspelo sinhronizirati z Google Calendar'
+          setMessage({ type: 'info', text: syncMessage })
+        }
+      }
+
+      // Update Google Calendar event ID if successful
+      if (googleEventId) {
+        await supabase
+          .from('UserEvents')
+          .update({ google_calendar_event_id: googleEventId })
+          .eq('user_id', user.id)
+          .eq('event_id', event.id)
+      }
+
+      // Notify parent component
+      onJoinSuccess(event.id)
+      
+      if (!message) {
+        setMessage({ type: 'success', text: syncMessage })
+      }
+
+    } catch (error) {
+      console.error('Error joining event:', error)
+      setMessage({ type: 'error', text: 'Napaka pri dodajanju dogodka' })
+    } finally {
+      setIsJoining(false)
+
+      // Clear message after 5 seconds
+      setTimeout(() => {
+        setMessage(null)
+      }, 5000)
     }
   }
-  console.log('Attempting Google Calendar sync', { event });
-  return await GoogleCalendarAPI.createEvent(googleEvent, accessToken)
-}
 
   return (
     <div className="mb-3 bg-white p-4 rounded-lg shadow-sm border-l-4 border-orange-400 hover:shadow-md transition-shadow">

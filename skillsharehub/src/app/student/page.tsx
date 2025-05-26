@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from 'react'
 import { supabase } from '@/lib/supabase'
+import { GoogleCalendarAPI } from '@/lib/googleCalendar'
 import MyEvents from '@/app/components/MyEvents'
 import CalendarApp from '@/app/components/CalendarApp'
 
@@ -44,6 +45,7 @@ export default function StudentProfile() {
   const [editMode, setEditMode] = useState(false)
   
   const [hasGoogleConnected, setHasGoogleConnected] = useState(false)
+  const [googleConnectionValid, setGoogleConnectionValid] = useState(false)
   const [showGoogleConnect, setShowGoogleConnect] = useState(false)
 
   // New states for user events
@@ -56,6 +58,25 @@ export default function StudentProfile() {
   // State for calendar view toggle
   const [showCalendar, setShowCalendar] = useState(false)
 
+  // Check Google connection status
+  const checkGoogleConnection = async () => {
+    try {
+      const { data: { user } } = await supabase.auth.getUser()
+      const hasProvider = user?.app_metadata?.providers?.includes('google') || false
+      setHasGoogleConnected(hasProvider)
+      
+      if (hasProvider) {
+        const isValid = await GoogleCalendarAPI.checkGoogleConnection()
+        setGoogleConnectionValid(isValid)
+      } else {
+        setGoogleConnectionValid(false)
+      }
+    } catch (error) {
+      console.error('Error checking Google connection:', error)
+      setGoogleConnectionValid(false)
+    }
+  }
+
   useEffect(() => {
     const fetchProfile = async () => {
       const { data: { user } } = await supabase.auth.getUser()
@@ -64,8 +85,7 @@ export default function StudentProfile() {
         return
       }
 
-      // Check if user has Google connected
-      setHasGoogleConnected(user.app_metadata?.providers?.includes('google') || false)
+      await checkGoogleConnection()
 
       const { data, error } = await supabase
         .from('Uporabniki')
@@ -219,15 +239,34 @@ export default function StudentProfile() {
         options: {
           redirectTo: `${window.location.origin}/student`,
           scopes: 'openid email profile https://www.googleapis.com/auth/calendar.events https://www.googleapis.com/auth/calendar.readonly',
+          queryParams: {
+            access_type: 'offline', // This is crucial for getting refresh token
+            prompt: 'consent'       // Force consent to ensure refresh token
+          }
         }
       })
       
       if (error) {
         setError('Napaka pri povezavi Google računa: ' + error.message)
         setGoogleLoading(false)
+      } else {
+        // Connection initiated, loading will be handled by redirect
       }
     } catch (e: any) {
       setError('Napaka: ' + e.message)
+      setGoogleLoading(false)
+    }
+  }
+
+  const disconnectGoogleAccount = async () => {
+    setGoogleLoading(true)
+    try {
+      // Note: Supabase doesn't have a direct method to unlink providers
+      // You might need to implement this on your backend
+      setSuccess('Za prekinitev Google povezave se obrnite na podporo.')
+    } catch (error) {
+      setError('Napaka pri prekinjanju Google povezave.')
+    } finally {
       setGoogleLoading(false)
     }
   }
@@ -283,13 +322,36 @@ export default function StudentProfile() {
                 <label className="block font-semibold mb-1">Povezani računi:</label>
                 
                 {hasGoogleConnected ? (
-                  <div className="flex items-center gap-2 p-2 bg-green-50 border border-green-200 rounded text-sm">
-                    <img
-                      src="https://www.svgrepo.com/show/475656/google-color.svg"
-                      alt="Google"
-                      className="h-4 w-4"
-                    />
-                    <span className="text-green-700">Google račun povezan</span>
+                  <div className="space-y-2">
+                    <div className={`flex items-center gap-2 p-2 border rounded text-sm ${
+                      googleConnectionValid 
+                        ? 'bg-green-50 border-green-200' 
+                        : 'bg-yellow-50 border-yellow-200'
+                    }`}>
+                      <img
+                        src="https://www.svgrepo.com/show/475656/google-color.svg"
+                        alt="Google"
+                        className="h-4 w-4"
+                      />
+                      <span className={googleConnectionValid ? 'text-green-700' : 'text-yellow-700'}>
+                        Google račun {googleConnectionValid ? 'povezan in aktiven' : 'potrebuje osvežitev'}
+                      </span>
+                    </div>
+                    
+                    {!googleConnectionValid && (
+                      <button
+                        onClick={connectGoogleAccount}
+                        disabled={googleLoading}
+                        className="flex items-center gap-2 p-2 bg-blue-50 text-blue-700 border border-blue-200 rounded hover:bg-blue-100 text-sm"
+                      >
+                        <img
+                          src="https://www.svgrepo.com/show/475656/google-color.svg"
+                          alt="Google"
+                          className="h-4 w-4"
+                        />
+                        <span>{googleLoading ? 'Povezujem...' : 'Osveži Google povezavo'}</span>
+                      </button>
+                    )}
                   </div>
                 ) : (
                   <>
@@ -308,7 +370,7 @@ export default function StudentProfile() {
                     ) : (
                       <div className="p-3 bg-blue-50 rounded border border-blue-200 space-y-2">
                         <p className="text-sm text-blue-800">
-                          Povezava Google računa bo omogočila dostop do Google Calendar funkcij.
+                          Povezava Google računa bo omogočila avtomatično sinhronizacijo dogodkov z Google Calendar.
                         </p>
                         <div className="flex gap-2">
                           <button
@@ -437,7 +499,7 @@ export default function StudentProfile() {
                   <MyEvents 
                     userEvents={userEvents}
                     onEventRemoved={handleEventRemoved}
-                    hasGoogleConnected={hasGoogleConnected}
+                    hasGoogleConnected={googleConnectionValid}
                   />
                 ) : (
                   <div className="calendar-container">

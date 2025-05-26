@@ -62,6 +62,9 @@ export default function Navbar() {
   const handlePostsClick = async () => {
     router.push('/posts')
   }
+  const handledmsClick = async () => {
+    router.push('/dms')
+  }
 
   return (
     <>
@@ -88,7 +91,18 @@ export default function Navbar() {
               Posti
             </button>
           ) : (
-            <span className="text-gray-400 cursor-not-allowed">Moj profil</span>
+            <span className="text-gray-400 cursor-not-allowed">Posti</span>
+          )}
+          {user ? (
+            <button
+              onClick={handledmsClick}
+              className="text-blue-600 hover:underline"
+              type="button"
+            >
+              Msg
+            </button>
+          ) : (
+            <span className="text-gray-400 cursor-not-allowed">Msg</span>
           )}
           <a href="#" className="text-gray-700 hover:underline">Online Courses</a>
           <a href="#" className="text-gray-700 hover:underline">Contact</a>

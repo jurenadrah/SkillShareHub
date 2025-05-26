@@ -82,7 +82,7 @@ export default function TutorProfile() {
     start_date_time: new Date().toISOString().slice(0, 16),
     end_date_time: new Date(Date.now() + 60 * 60 * 1000).toISOString().slice(0, 16),
     event_type: 'single',
-    recurrence_end_date: null
+    recurrence_end_date: new Date().toISOString().slice(0, 16),
   })
 
   const [ocene, setOcene] = useState<Ocena[]>([])
@@ -390,6 +390,7 @@ export default function TutorProfile() {
         event_type: 'single',
         recurrence_end_date: new Date().toISOString().slice(0, 16)
       })
+
       setEventType('single')
       setSuccess('Dogodek uspešno dodan!')
     } catch (err) {

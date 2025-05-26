@@ -47,9 +47,7 @@ export class GoogleCalendarAPI {
       // Update session with new tokens
       await supabase.auth.setSession({
         access_token: session.access_token,
-        refresh_token: session.refresh_token,
-        provider_token: newTokens.access_token,
-        provider_refresh_token: newTokens.refresh_token || refreshToken
+        refresh_token: session.refresh_token
       })
 
       return newTokens.access_token
@@ -110,8 +108,8 @@ export class GoogleCalendarAPI {
           if (session?.provider_refresh_token) {
             const newTokens = await this.refreshAccessToken(session.provider_refresh_token)
             await supabase.auth.setSession({
-              ...session,
-              provider_token: newTokens.access_token,
+              access_token: session.access_token,
+              refresh_token: session.refresh_token,
             })
             return this.createEvent(event, retryCount + 1)
           }
@@ -135,10 +133,8 @@ export class GoogleCalendarAPI {
     }
   }
 
-  static async deleteEvent(eventId: string, retryCount = 0): Promise<void> {
+static async deleteEvent(eventId: string, accessToken: string, retryCount = 0): Promise<void> {
     try {
-      const accessToken = await this.getValidAccessToken()
-
       const response = await fetch(`${this.BASE_URL}/calendars/primary/events/${eventId}`, {
         method: 'DELETE',
         headers: {
@@ -153,10 +149,10 @@ export class GoogleCalendarAPI {
           if (session?.provider_refresh_token) {
             const newTokens = await this.refreshAccessToken(session.provider_refresh_token)
             await supabase.auth.setSession({
-              ...session,
-              provider_token: newTokens.access_token,
+              access_token: session.access_token,
+              refresh_token: session.refresh_token,
             })
-            return this.deleteEvent(eventId, retryCount + 1)
+            return this.deleteEvent(eventId, accessToken, retryCount + 1)
           }
         }
 

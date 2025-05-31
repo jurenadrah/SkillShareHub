@@ -55,7 +55,7 @@ export default function Navbar() {
       return
     }
 
-    router.push(data.tutor ? '/tutor' : '/student')
+    router.push('/profil')
 
   }
 

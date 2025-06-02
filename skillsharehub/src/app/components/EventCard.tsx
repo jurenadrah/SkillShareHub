@@ -1,12 +1,15 @@
 'use client'
 
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
 import { supabase } from '@/lib/supabase'
 import { GoogleCalendarAPI } from '@/lib/googleCalendar'
 
 type Event = {
   id: number
-  fk_id_uporabnik: number
+  fk_id_uporabnik: {
+    ime: string
+    priimek?: string
+  } | null
   day_of_week: string
   start_date_time: string
   end_date_time: string
@@ -39,6 +42,25 @@ export default function EventCard({ event, user, isJoined, onJoinSuccess }: Even
       minute: '2-digit'
     })
   }
+  const [eventDetails, setEventDetails] = useState<Event | null>(null)
+
+  useEffect(() => {
+    const fetchEvent = async () => {
+      const { data, error } = await supabase
+        .from('Event')
+        .select(`
+          *,
+          fk_id_uporabnik (
+            ime,
+            priimek
+          )
+        `)
+        .eq('id', event.id)
+        .single()
+      if (!error) setEventDetails(data)
+    }
+    fetchEvent()
+  }, [event.id])
 
   // Check if user has Google connected
   const checkGoogleConnection = async (): Promise<boolean> => {
@@ -161,7 +183,17 @@ export default function EventCard({ event, user, isJoined, onJoinSuccess }: Even
       <p className="font-semibold text-gray-800 mb-1">{event.title}</p>
       <p className="text-sm text-gray-600 mb-2">{event.description}</p>
       <p className="text-sm italic text-gray-700 mb-2">
-        Predavatelj: {event.lecturer}
+        <p className="text-sm italic text-gray-700 mb-2">
+          Predavatelj: <br />
+          {
+            (eventDetails?.fk_id_uporabnik
+              ? `${eventDetails.fk_id_uporabnik.ime ?? ''} ${eventDetails.fk_id_uporabnik.priimek ?? ''}`.trim()
+              : event.fk_id_uporabnik
+              ? `${event.fk_id_uporabnik.ime ?? ''} ${event.fk_id_uporabnik.priimek ?? ''}`.trim()
+              : eventDetails?.lecturer || event.lecturer
+            )
+          }        
+          </p>
       </p>
       
       <div className="flex justify-between items-center mb-3">

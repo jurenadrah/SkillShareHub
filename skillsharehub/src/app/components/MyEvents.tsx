@@ -1,6 +1,6 @@
 'use client'
 
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { supabase } from '@/lib/supabase'
 import { GoogleCalendarAPI } from '@/lib/googleCalendar'
 
@@ -16,6 +16,10 @@ type UserEvent = {
     start_date_time: string
     end_date_time: string
     lecturer: string
+    fk_id_uporabnik?: {
+      ime: string
+      priimek?: string
+    } | null
     predmet?: {
       naziv: string
     }
@@ -31,6 +35,42 @@ interface MyEventsProps {
 export default function MyEvents({ userEvents, onEventRemoved, hasGoogleConnected }: MyEventsProps) {
   const [leavingEvents, setLeavingEvents] = useState(new Set<number>())
   const [messages, setMessages] = useState(new Map<number, { type: 'success' | 'error' | 'info', text: string }>())
+  const [eventDetails, setEventDetails] = useState(new Map<number, any>())
+
+  // Fetch detailed event information for each event
+  useEffect(() => {
+    const fetchEventDetails = async () => {
+      const detailsMap = new Map()
+      
+      for (const userEvent of userEvents) {
+        try {
+          const { data, error } = await supabase
+            .from('Event')
+            .select(`
+              *,
+              fk_id_uporabnik (
+                ime,
+                priimek
+              )
+            `)
+            .eq('id', userEvent.event.id)
+            .single()
+          
+          if (!error && data) {
+            detailsMap.set(userEvent.event.id, data)
+          }
+        } catch (error) {
+          console.error('Error fetching event details:', error)
+        }
+      }
+      
+      setEventDetails(detailsMap)
+    }
+
+    if (userEvents.length > 0) {
+      fetchEventDetails()
+    }
+  }, [userEvents])
 
   // Refresh Google token
   const refreshGoogleToken = async (): Promise<string | null> => {
@@ -249,6 +289,7 @@ export default function MyEvents({ userEvents, onEventRemoved, hasGoogleConnecte
         )
         const isLeaving = leavingEvents.has(userEvent.id)
         const currentMessage = messages.get(userEvent.id)
+        const eventDetail = eventDetails.get(userEvent.event.id)
         
         return (
           <div
@@ -263,8 +304,16 @@ export default function MyEvents({ userEvents, onEventRemoved, hasGoogleConnecte
                 <p className="text-sm text-gray-600 mb-2">
                   {userEvent.event.description}
                 </p>
-                <p className="text-sm text-gray-700 mb-1">
-                  <strong>Predavatelj:</strong> {userEvent.event.lecturer}
+                <p className="text-sm italic text-gray-700 mb-2">
+                  Predavatelj: <br />
+                  {
+                    (eventDetail?.fk_id_uporabnik
+                      ? `${eventDetail.fk_id_uporabnik.ime ?? ''} ${eventDetail.fk_id_uporabnik.priimek ?? ''}`.trim()
+                      : userEvent.event.fk_id_uporabnik
+                      ? `${userEvent.event.fk_id_uporabnik.ime ?? ''} ${userEvent.event.fk_id_uporabnik.priimek ?? ''}`.trim()
+                      : eventDetail?.lecturer || userEvent.event.lecturer
+                    )
+                  }        
                 </p>
                 {userEvent.event.predmet && (
                   <p className="text-sm text-gray-700 mb-2">

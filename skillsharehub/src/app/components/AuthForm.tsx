@@ -1,21 +1,19 @@
 'use client'
+
 import { useState, useEffect } from 'react';
 import { supabase } from '@/lib/supabase';
 
 export default function AuthForm() {
-  // State za obrazec
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [ime, setIme] = useState('');
   const [priimek, setPriimek] = useState('');
-  const [tutor, setTutor] = useState(false);
   const [mode, setMode] = useState<'login' | 'signup'>('login');
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
   const [success, setSuccess] = useState('');
   const [user, setUser] = useState<any>(null);
 
-  // Spremljaj prijavljenega uporabnika
   useEffect(() => {
     const getUser = async () => {
       const { data } = await supabase.auth.getUser();
@@ -32,14 +30,12 @@ export default function AuthForm() {
     };
   }, []);
 
-  // Navadna registracija
   const handleSignUp = async (e: React.FormEvent) => {
     e.preventDefault();
     setLoading(true);
     setError('');
     setSuccess('');
 
-    // 1. Supabase Auth sign up
     const { data, error: signUpError } = await supabase.auth.signUp({
       email,
       password,
@@ -51,26 +47,24 @@ export default function AuthForm() {
       return;
     }
 
-    // 2. Dodaš v svojo tabelo Uporabniki
+    // Insert into 'Uporabniki' with tutor: false by default
     const { error: dbError } = await supabase
       .from('Uporabniki')
-      .insert([{ email, ime, priimek, tutor }]);
+      .insert([{ email, ime, priimek, tutor: false }]);
 
     if (dbError) {
       setError(dbError.message);
     } else {
       setSuccess('Registracija uspešna! Preveri email za potrditev.');
-      // Reset form
       setEmail('');
       setPassword('');
       setIme('');
       setPriimek('');
-      setTutor(false);
     }
+
     setLoading(false);
   };
 
-  // Navadna prijava
   const handleLogIn = async (e: React.FormEvent) => {
     e.preventDefault();
     setError('');
@@ -85,18 +79,16 @@ export default function AuthForm() {
     if (logInError) {
       setError(logInError.message);
     }
+
     setLoading(false);
   };
 
-
-  // Odjava
   const signOut = async () => {
     await supabase.auth.signOut();
     setUser(null);
     setSuccess('');
     setError('');
   };
-
 
   return (
     <div className="max-w-md w-full mx-auto bg-white rounded shadow p-6 mt-8">
@@ -117,9 +109,7 @@ export default function AuthForm() {
               onClick={() => setMode(mode === 'login' ? 'signup' : 'login')}
               className="text-sm underline text-indigo-600"
             >
-              {mode === 'login'
-                ? 'Nimaš računa? Registriraj se'
-                : 'Imaš račun? Prijava'}
+              {mode === 'login' ? 'Nimaš računa? Registriraj se' : 'Imaš račun? Prijava'}
             </button>
           </div>
           <form
@@ -144,42 +134,6 @@ export default function AuthForm() {
                   className="w-full p-2 border rounded"
                   required
                 />
-                
-                {/* Tutor selection for normal registration */}
-                <div className="space-y-2">
-                  <label className="block text-sm font-medium text-gray-700">
-                    Tip računa:
-                  </label>
-                  <div className="space-y-2">
-                    <div className="flex items-center space-x-2">
-                      <input
-                        type="radio"
-                        id="signup-student"
-                        name="signupUserType"
-                        checked={!tutor}
-                        onChange={() => setTutor(false)}
-                        className="w-4 h-4 text-indigo-600"
-                      />
-                      <label htmlFor="signup-student" className="text-sm text-gray-700">
-                        Dijak/Študent - Iščem pomoč pri učenju
-                      </label>
-                    </div>
-                    
-                    <div className="flex items-center space-x-2">
-                      <input
-                        type="radio"
-                        id="signup-tutor"
-                        name="signupUserType"
-                        checked={tutor}
-                        onChange={() => setTutor(true)}
-                        className="w-4 h-4 text-indigo-600"
-                      />
-                      <label htmlFor="signup-tutor" className="text-sm text-gray-700">
-                        Tutor - Ponujam pomoč pri učenju
-                      </label>
-                    </div>
-                  </div>
-                </div>
               </>
             )}
             <input

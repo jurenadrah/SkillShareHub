@@ -23,7 +23,7 @@ type Predmet = {
   naziv: string
 }
 
-type Event = {
+type HomeEvent = {
   id: number
   fk_id_uporabnik: number
   day_of_week: string
@@ -43,8 +43,8 @@ type User = {
 
 export default function Home() {
   const [users, setUsers] = useState<Uporabnik[]>([])
-  const [events, setEvents] = useState<Event[]>([])
-  const [filteredEvents, setFilteredEvents] = useState<Event[]>([])
+  const [events, setEvents] = useState<HomeEvent[]>([])
+  const [filteredEvents, setFilteredEvents] = useState<HomeEvent[]>([])
   const [predmeti, setPredmeti] = useState<Predmet[]>([])
   const [selectedPredmet, setSelectedPredmet] = useState<number | null>(null)
   const [loading, setLoading] = useState(true)
@@ -118,7 +118,7 @@ export default function Home() {
         console.error('Event fetch error:', eventError)
       } else {
         // Transform the data to match our Event type
-        const formattedEvents = eventData.map(event => ({
+        const formattedEvents: HomeEvent[] = eventData.map(event => ({
           id: event.id,
           fk_id_uporabnik: event.fk_id_uporabnik,
           day_of_week: format(parseISO(event.start_date_time), 'EEEE', { locale: sl }),
@@ -317,7 +317,7 @@ export default function Home() {
                         dayEvents.map((event) => (
                           <EventCard
                             key={event.id}
-                            event={event}
+                            event={event as any}
                             user={user}
                             isJoined={joinedEvents.has(event.id)}
                             onJoinSuccess={handleJoinSuccess}

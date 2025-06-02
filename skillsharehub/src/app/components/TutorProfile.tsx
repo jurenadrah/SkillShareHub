@@ -370,7 +370,27 @@ export default function TutorProfile() {
       setError('Napaka pri dodajanju predmeta: ' + (err as Error).message)
     }
   }
+const dodajBanner = async () => {
+  if (!window.confirm('Ali ste prepričani, da želite dodati nov banner?')) return
 
+  try {
+    const { error } = await supabase
+      .from('Bannerji')
+      .insert([{
+        naziv: prompt('Vnesite ime bannerja:') || 'Nov Banner',
+        cena: parseInt(prompt('Vnesite ceno (točke):') || '100'),
+        slika_url: prompt('Vnesite URL slike:') || ''
+      }])
+
+    if (error) throw error
+    setSuccess('Banner uspešno dodan!')
+    // Osveži seznam bannerjev
+    const { data } = await supabase.from('Bannerji').select('*')
+    if (data) setBannerji(data)
+  } catch (err) {
+    setError('Napaka pri dodajanju bannerja: ' + (err as Error).message)
+  }
+}
   const dodajDogodek = async () => {
     if (!tutor) return
 

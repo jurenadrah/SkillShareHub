@@ -73,6 +73,8 @@ export default function TutorProfile() {
   const [zoomLink, setZoomLink] = useState('')
   const [profilnaSlika, setProfilnaSlika] = useState('')
 
+   const bannerPrices = [60, 80, 110, 190, 300]
+
   // Predmeti
   const [predmeti, setPredmeti] = useState<Predmet[]>([])
   const [tipiPredmetov, setTipiPredmetov] = useState<TipPredmeta[]>([])
@@ -194,14 +196,36 @@ export default function TutorProfile() {
     fetchTutor()
   }, [])
 
-  const kupiBanner = async (bannerId: number) => {
+   const getNextBanner = () => {
+    if (!tutor || !bannerji.length) return null
+    
+    // If tutor has no active banner, return the cheapest one
+    if (!tutor.aktiven_banner) {
+      return bannerji.find(b => b.cena === bannerPrices[0]) || null
+    }
+    
+    // Find current banner index
+    const currentBanner = bannerji.find(b => b.slika_url === tutor.aktiven_banner)
+    if (!currentBanner) return null
+    
+    const currentIndex = bannerPrices.indexOf(currentBanner.cena)
+    if (currentIndex === -1 || currentIndex >= bannerPrices.length - 1) return null
+    
+    // Return the next banner in sequence
+    return bannerji.find(b => b.cena === bannerPrices[currentIndex + 1]) || null
+  }
+
+  const kupiBanner = async () => {
     if (!tutor) return
     
-    const banner = bannerji.find(b => b.id === bannerId)
-    if (!banner) return
+    const nextBanner = getNextBanner()
+    if (!nextBanner) {
+      setError('Ni več bannerjev za nadgradnjo ali imate že najvišji banner.')
+      return
+    }
     
-    if (tutor.tocke < banner.cena) {
-      setError('Nimate dovolj točk za ta banner.')
+    if (tutor.tocke < nextBanner.cena) {
+      setError(`Nimate dovolj točk za ta banner. Potrebujete še ${nextBanner.cena - tutor.tocke} točk.`)
       return
     }
 
@@ -209,8 +233,8 @@ export default function TutorProfile() {
       const { error } = await supabase
         .from('Uporabniki')
         .update({
-          tocke: tutor.tocke - banner.cena,
-          aktiven_banner: banner.slika_url
+          tocke: tutor.tocke - nextBanner.cena,
+          aktiven_banner: nextBanner.slika_url
         })
         .eq('id', tutor.id)
 
@@ -224,7 +248,7 @@ export default function TutorProfile() {
 
       if (data) {
         setTutor(data)
-        setSuccess(`Uspešno ste aktivirali banner "${banner.naziv}"!`)
+        setSuccess(`Uspešno ste nadgradili na banner "${nextBanner.naziv}"!`)
       }
     } catch (err) {
       setError('Napaka pri nakupu bannerja: ' + (err as Error).message)
@@ -493,9 +517,32 @@ const dodajBanner = async () => {
 
    if (loading) return <div className="tutor-profile-container"><p>Nalaganje...</p></div>
   if (!tutor) return <div className="tutor-profile-container"><p>Ni najdenega tutor profila.</p></div>
+ const nextBanner = getNextBanner()
+  const hasMaxBanner = tutor.aktiven_banner && 
+    bannerji.some(b => b.slika_url === tutor.aktiven_banner && b.cena === bannerPrices[bannerPrices.length - 1])
 
   return (
     <div className="tutor-profile-container">
+        {tutor.aktiven_banner && (
+        <div className="profile-banner" style={{
+          background: 'linear-gradient(45deg, #f5f5f5 25%, #e0e0e0 25%, #e0e0e0 50%, #f5f5f5 50%, #f5f5f5 75%, #e0e0e0 75%)',
+          backgroundSize: '20px 20px',
+          padding: '10px',
+          borderRadius: '8px',
+          marginBottom: '20px'
+        }}>
+          <img 
+            src={tutor.aktiven_banner} 
+            alt="Aktiven banner" 
+            style={{
+              width: '100%',
+              maxHeight: '200px',
+              objectFit: 'contain',
+              mixBlendMode: 'multiply'
+            }}
+          />
+        </div>
+      )}
       {tutor.aktiven_banner && (
         <div className="profile-banner">
           <img src={tutor.aktiven_banner} alt="Aktiven banner" />

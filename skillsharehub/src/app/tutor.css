@@ -17,7 +17,7 @@
   margin-top: 1rem;
 }
 
-.current-banner, .next-banner, .current-banner-view, .no-banner {
+.current-banner, .next-banner, .current-banner-view {
   display: flex;
   flex-direction: column;
   align-items: center;
@@ -25,14 +25,15 @@
   padding: 1rem;
   border-radius: 8px;
   background-color: #f5f5f5;
+  border: 1px solid #e0e0e0;
 }
 
 .banner-image {
   max-width: 100%;
   height: auto;
-  max-height: 150px;
-  border-radius: 4px;
-  box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+  max-height: 200px;
+  border-radius: 8px;
+  box-shadow: 0 2px 8px rgba(0,0,0,0.1);
 }
 
 .next-banner {
@@ -46,15 +47,19 @@
   border-radius: 8px;
   text-align: center;
   font-weight: bold;
+  border: 1px solid #90caf9;
 }
 
 .points-needed {
   color: #d32f2f;
   font-size: 0.9rem;
+  margin-top: 0.5rem;
 }
 
 .no-banner {
+  padding: 1rem;
   background-color: #ffebee;
+  border-radius: 8px;
   border: 1px solid #ef9a9a;
 }
 .profile-header {

@@ -102,7 +102,41 @@ export default function TutorProfile() {
   const [error, setError] = useState<string | null>(null)
   const [success, setSuccess] = useState<string | null>(null)
 
-  useEffect(() => {
+  const updateProfile = async () => {
+  if (!tutor) return;
+  setError(null);
+  setSuccess(null);
+
+  try {
+    const { error } = await supabase
+      .from('Uporabniki')
+      .update({
+        email: email,
+        bio: bio,
+        zoom_link: zoomLink,
+        profilna_slika: profilnaSlika
+      })
+      .eq('id', tutor.id);
+
+    if (error) throw error;
+
+    // Osveži podatke
+    const { data } = await supabase
+      .from('Uporabniki')
+      .select('*')
+      .eq('id', tutor.id)
+      .single();
+
+    if (data) {
+      setTutor(data);
+      setSuccess('Profil uspešno posodobljen!');
+      setEditMode(false); // Zapri urejanje po uspešnem shranjevanju
+    }
+  } catch (err) {
+    setError('Napaka pri posodabljanju profila: ' + (err as Error).message);
+  }
+};
+ useEffect(() => {
     const fetchTutor = async () => {
       const { data: { user } } = await supabase.auth.getUser()
       if (!user) return setLoading(false)
@@ -149,13 +183,22 @@ export default function TutorProfile() {
       // Pridobi dogodke
       await fetchDogodki(data.id)
 
-      // Pridobi bannerje
+      // Pridobi bannerje z pravilnimi URL-ji iz Storage
       const { data: bannerData } = await supabase
         .from('Bannerji')
         .select('*')
         .order('cena', { ascending: true })
 
-      if (bannerData) setBannerji(bannerData)
+      if (bannerData) {
+        // Dodaj pravilne URL-je iz Storage-a
+        const updatedBanners = bannerData.map(banner => ({
+          ...banner,
+          slika_url: supabase.storage
+            .from('bannerji')
+            .getPublicUrl(`${banner.id}.png`).data.publicUrl
+        }))
+        setBannerji(updatedBanners)
+      }
 
       setLoading(false)
     }
@@ -196,97 +239,60 @@ export default function TutorProfile() {
     fetchTutor()
   }, [])
 
-   const getNextBanner = () => {
-    if (!tutor || !bannerji.length) return null
-    
-    // If tutor has no active banner, return the cheapest one
-    if (!tutor.aktiven_banner) {
-      return bannerji.find(b => b.cena === bannerPrices[0]) || null
-    }
-    
-    // Find current banner index
-    const currentBanner = bannerji.find(b => b.slika_url === tutor.aktiven_banner)
-    if (!currentBanner) return null
-    
-    const currentIndex = bannerPrices.indexOf(currentBanner.cena)
-    if (currentIndex === -1 || currentIndex >= bannerPrices.length - 1) return null
-    
-    // Return the next banner in sequence
-    return bannerji.find(b => b.cena === bannerPrices[currentIndex + 1]) || null
+const getNextBanner = () => {
+  if (!tutor || !bannerji.length) return null;
+
+  // Če tutor nima bannerja, vrni najcenejšega
+  if (!tutor.aktiven_banner) {
+    return bannerji.find(b => b.cena === bannerPrices[0]) || null;
   }
 
-  const kupiBanner = async () => {
-    if (!tutor) return
-    
-    const nextBanner = getNextBanner()
-    if (!nextBanner) {
-      setError('Ni več bannerjev za nadgradnjo ali imate že najvišji banner.')
-      return
-    }
-    
-    if (tutor.tocke < nextBanner.cena) {
-      setError(`Nimate dovolj točk za ta banner. Potrebujete še ${nextBanner.cena - tutor.tocke} točk.`)
-      return
-    }
+  // Poišči trenutni banner
+  const currentBanner = bannerji.find(b => b.slika_url === tutor.aktiven_banner);
+  if (!currentBanner) return null;
 
-    try {
-      const { error } = await supabase
-        .from('Uporabniki')
-        .update({
-          tocke: tutor.tocke - nextBanner.cena,
-          aktiven_banner: nextBanner.slika_url
-        })
-        .eq('id', tutor.id)
+  // Poišči naslednji banner po ceni
+  const currentIndex = bannerPrices.indexOf(currentBanner.cena);
+  if (currentIndex === -1 || currentIndex >= bannerPrices.length - 1) return null;
 
-      if (error) throw error
+  return bannerji.find(b => b.cena === bannerPrices[currentIndex + 1]) || null;
+};
+const kupiBanner = async () => {
+  if (!tutor) return;
 
-      const { data } = await supabase
-        .from('Uporabniki')
-        .select('*')
-        .eq('id', tutor.id)
-        .single()
-
-      if (data) {
-        setTutor(data)
-        setSuccess(`Uspešno ste nadgradili na banner "${nextBanner.naziv}"!`)
-      }
-    } catch (err) {
-      setError('Napaka pri nakupu bannerja: ' + (err as Error).message)
-    }
+  const nextBanner = getNextBanner();
+  if (!nextBanner) {
+    setError('Ni več bannerjev za nadgradnjo ali imate že najvišji banner.');
+    return;
   }
 
-  const updateProfile = async () => {
-    if (!tutor) return
-    setError(null)
-    setSuccess(null)
-
-    if (!/\S+@\S+\.\S+/.test(email)) {
-      return setError('Neveljaven email.')
-    }
-
-    if (email !== tutor.email) {
-      const { error: authError } = await supabase.auth.updateUser({ email })
-      if (authError) return setError('Napaka pri posodobitvi emaila: ' + authError.message)
-    }
-
+  try {
+    // Posodobi bazo
     const { error } = await supabase
       .from('Uporabniki')
       .update({
-        email,
-        bio,
-        zoom_link: zoomLink,
-        profilna_slika: profilnaSlika
+        tocke: tutor.tocke - nextBanner.cena,
+        aktiven_banner: nextBanner.slika_url
       })
-      .eq('id', tutor.id)
+      .eq('id', tutor.id);
 
-    if (error) {
-      setError('Napaka pri shranjevanju: ' + error.message)
-    } else {
-      setSuccess('Profil uspešno posodobljen!')
-      setTutor({ ...tutor, email, bio, zoom_link: zoomLink, profilna_slika: profilnaSlika })
-      setEditMode(false)
+    if (error) throw error;
+
+    // Osveži stanje
+    const { data: updatedTutor } = await supabase
+      .from('Uporabniki')
+      .select('*')
+      .eq('id', tutor.id)
+      .single();
+
+    if (updatedTutor) {
+      setTutor(updatedTutor);
+      setSuccess(`Uspešno ste nadgradili na banner level ${bannerPrices.indexOf(nextBanner.cena) + 1}!`);
     }
+  } catch (err) {
+    setError('Napaka pri nakupu bannerja: ' + (err as Error).message);
   }
+};
 
   const handleFileUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0]
@@ -415,6 +421,48 @@ const dodajBanner = async () => {
     setError('Napaka pri dodajanju bannerja: ' + (err as Error).message)
   }
 }
+const handleBannerUpload = async (e: React.ChangeEvent<HTMLInputElement>, bannerLevel: number) => {
+  const file = e.target.files?.[0]
+  if (!file) return
+
+  const filePath = `bannerji/${bannerLevel}.png` // ali .jpg, odvisno od formata
+
+  // Naloži sliko v storage
+  const { error: uploadError } = await supabase.storage
+    .from('bannerji') // Vaš bucket za bannerje
+    .upload(filePath, file, { upsert: true })
+
+  if (uploadError) {
+    setError('Napaka pri nalaganju bannerja: ' + uploadError.message)
+    return
+  }
+
+  // Pridobi javni URL
+  const { data: publicUrlData } = supabase.storage
+    .from('bannerji')
+    .getPublicUrl(filePath)
+
+  if (publicUrlData?.publicUrl) {
+    // Shrani URL v bazo podatkov
+    const { error } = await supabase
+      .from('Bannerji')
+      .upsert({
+        id: bannerLevel,
+        naziv: `Banner ${bannerLevel}`,
+        cena: bannerPrices[bannerLevel - 1],
+        slika_url: publicUrlData.publicUrl
+      })
+
+    if (error) {
+      setError('Napaka pri shranjevanju bannerja: ' + error.message)
+    } else {
+      setSuccess(`Banner ${bannerLevel} uspešno naložen in shranjen!`)
+      // Osveži seznam bannerjev
+      const { data } = await supabase.from('Bannerji').select('*')
+      if (data) setBannerji(data)
+    }
+  }
+}
   const dodajDogodek = async () => {
     if (!tutor) return
 
@@ -515,39 +563,16 @@ const dodajBanner = async () => {
     }
   }
 
-   if (loading) return <div className="tutor-profile-container"><p>Nalaganje...</p></div>
+  if (loading) return <div className="tutor-profile-container"><p>Nalaganje...</p></div>
   if (!tutor) return <div className="tutor-profile-container"><p>Ni najdenega tutor profila.</p></div>
- const nextBanner = getNextBanner()
+
+  const nextBanner = getNextBanner()
   const hasMaxBanner = tutor.aktiven_banner && 
     bannerji.some(b => b.slika_url === tutor.aktiven_banner && b.cena === bannerPrices[bannerPrices.length - 1])
 
   return (
     <div className="tutor-profile-container">
-        {tutor.aktiven_banner && (
-        <div className="profile-banner" style={{
-          background: 'linear-gradient(45deg, #f5f5f5 25%, #e0e0e0 25%, #e0e0e0 50%, #f5f5f5 50%, #f5f5f5 75%, #e0e0e0 75%)',
-          backgroundSize: '20px 20px',
-          padding: '10px',
-          borderRadius: '8px',
-          marginBottom: '20px'
-        }}>
-          <img 
-            src={tutor.aktiven_banner} 
-            alt="Aktiven banner" 
-            style={{
-              width: '100%',
-              maxHeight: '200px',
-              objectFit: 'contain',
-              mixBlendMode: 'multiply'
-            }}
-          />
-        </div>
-      )}
-      {tutor.aktiven_banner && (
-        <div className="profile-banner">
-          <img src={tutor.aktiven_banner} alt="Aktiven banner" />
-        </div>
-      )}
+        {/* Bannerji section - popravljena verzija */}
       <div className="profile-header">
         <div className="profile-info">
           <h1 className="profile-title">
@@ -609,42 +634,90 @@ const dodajBanner = async () => {
         )}
       </div>
   {/* Bannerji section */}
-      <div className="section">
-        <div className="section-header">
-          <h2>Moji bannerji (Točke: {tutor.tocke})</h2>
-          <button 
-            className="edit-button" 
-            onClick={() => setBannerjiEditMode(!bannerjiEditMode)}
-          >
-            {bannerjiEditMode ? 'Prekliči' : 'Upgrade banner'}
-          </button>
-        </div>
+    <div className="section">
+  <div className="section-header">
+    <h2>Moji bannerji (Točke: {tutor.tocke})</h2>
+    <button 
+      className="edit-button" 
+      onClick={() => setBannerjiEditMode(!bannerjiEditMode)}
+    >
+      {bannerjiEditMode ? 'Prekliči' : 'Upgrade banner'}
+    </button>
+  </div>
 
-        {bannerjiEditMode ? (
-          <div className="bannerji-grid">
-            {bannerji.map(banner => (
-              <div key={banner.id} className="banner-card">
-                <img src={banner.slika_url} alt={banner.naziv} />
-                <h3>{banner.naziv}</h3>
-                <p>Cena: {banner.cena} točk</p>
-                <button
-                  className={`save-button ${tutor.tocke < banner.cena ? 'disabled' : ''}`}
-                  onClick={() => kupiBanner(banner.id)}
-                  disabled={tutor.tocke < banner.cena}
-                >
-                  {tutor.tocke >= banner.cena ? 'Aktiviraj' : 'Premalo točk'}
-                </button>
-              </div>
-            ))}
-          </div>
-        ) : (
-          <p>
-            {tutor.aktiven_banner 
-              ? 'Trenutno imate aktiviran banner.' 
-              : 'Trenutno nimate aktivnega bannerja.'}
-          </p>
-        )}
-      </div>
+  {bannerjiEditMode ? (
+    <div className="banner-upgrade-container">
+      {tutor.aktiven_banner ? (
+        <div className="current-banner">
+          <h3>Trenutni banner:</h3>
+          <img 
+            src={tutor.aktiven_banner} 
+            alt="Trenutni banner" 
+            className="banner-image"
+          />
+          <p>Level: {bannerPrices.findIndex(price => 
+            bannerji.find(b => b.slika_url === tutor.aktiven_banner)?.cena === price
+          ) + 1} / {bannerPrices.length}</p>
+        </div>
+      ) : (
+        <div className="no-banner">
+          <p>Trenutno nimate aktivnega bannerja.</p>
+        </div>
+      )}
+
+      {nextBanner && (
+        <div className="next-banner">
+          <h3>Naslednji banner:</h3>
+          <img 
+            src={nextBanner.slika_url} 
+            alt="Naslednji banner" 
+            className="banner-image"
+          />
+          <p>Cena: {nextBanner.cena} točk</p>
+          <button
+            className={`save-button ${tutor.tocke < nextBanner.cena ? 'disabled' : ''}`}
+            onClick={kupiBanner}
+            disabled={tutor.tocke < nextBanner.cena}
+          >
+            {tutor.tocke >= nextBanner.cena ? 'Nadgradi' : 'Premalo točk'}
+          </button>
+          {tutor.tocke < nextBanner.cena && (
+            <p className="points-needed">
+              Potrebujete še {nextBanner.cena - tutor.tocke} točk za nadgradnjo.
+            </p>
+          )}
+        </div>
+      )}
+
+      {hasMaxBanner && (
+        <div className="max-banner-message">
+          <p>Čestitamo! Imate že najvišji možni banner.</p>
+        </div>
+      )}
+    </div>
+  ) : (
+    <div className="current-banner-view">
+      {tutor.aktiven_banner ? (
+        <>
+          <h3>Trenutni banner:</h3>
+          <img 
+            src={tutor.aktiven_banner} 
+            alt="Trenutni banner" 
+            className="banner-image"
+          />
+          <p>Level: {bannerPrices.findIndex(price => 
+            bannerji.find(b => b.slika_url === tutor.aktiven_banner)?.cena === price
+          ) + 1} / {bannerPrices.length}</p>
+          {!hasMaxBanner && (
+            <p>Za nadgradnjo kliknite gumb "Upgrade banner".</p>
+          )}
+        </>
+      ) : (
+        <p>Trenutno nimate aktivnega bannerja.</p>
+      )}
+    </div>
+  )}
+</div>
       {/* Sekcija za predmete */}
       <div className="section">
         <div className="section-header">

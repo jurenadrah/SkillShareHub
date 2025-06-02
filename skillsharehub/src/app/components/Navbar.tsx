@@ -99,13 +99,11 @@ export default function Navbar() {
               className="text-blue-600 hover:underline"
               type="button"
             >
-              Msg
+              Sporočila
             </button>
           ) : (
-            <span className="text-gray-400 cursor-not-allowed">Msg</span>
+            <span className="text-gray-400 cursor-not-allowed">Sporočila</span>
           )}
-          <a href="#" className="text-gray-700 hover:underline">Online Courses</a>
-          <a href="#" className="text-gray-700 hover:underline">Contact</a>
         </div>
 
         <button 

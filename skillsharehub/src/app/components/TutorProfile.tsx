@@ -13,6 +13,8 @@ type Tutor = {
   profilna_slika: string | null
   tutor: boolean
   zoom_link: string | null
+  tocke: number
+  aktiven_banner: string | null
 }
 
 type Ocena = {
@@ -50,12 +52,20 @@ type Event = {
   recurrence_end_date?: string | null
 }
 
+type Banner = {
+  id: number
+  naziv: string
+  cena: number
+  slika_url: string
+}
+
 export default function TutorProfile() {
   const [tutor, setTutor] = useState<Tutor | null>(null)
   const [loading, setLoading] = useState(true)
   const [editMode, setEditMode] = useState(false)
   const [predmetiEditMode, setPredmetiEditMode] = useState(false)
   const [urnikEditMode, setUrnikEditMode] = useState(false)
+  const [bannerjiEditMode, setBannerjiEditMode] = useState(false)
 
   // Profilne spremenljivke
   const [email, setEmail] = useState('')
@@ -86,6 +96,7 @@ export default function TutorProfile() {
   })
 
   const [ocene, setOcene] = useState<Ocena[]>([])
+  const [bannerji, setBannerji] = useState<Banner[]>([])
   const [error, setError] = useState<string | null>(null)
   const [success, setSuccess] = useState<string | null>(null)
 
@@ -96,7 +107,7 @@ export default function TutorProfile() {
 
       const { data, error } = await supabase
         .from('Uporabniki')
-        .select('id, ime, priimek, email, bio, profilna_slika, tutor, zoom_link')
+        .select('id, ime, priimek, email, bio, profilna_slika, tutor, zoom_link, tocke, aktiven_banner')
         .eq('email', user.email)
         .single()
 
@@ -105,7 +116,11 @@ export default function TutorProfile() {
         return setLoading(false)
       }
 
-      setTutor(data)
+      setTutor({
+        ...data,
+        tocke: data.tocke || 50,
+        aktiven_banner: data.aktiven_banner || null
+      })
       setEmail(data.email)
       setBio(data.bio ?? '')
       setZoomLink(data.zoom_link ?? '')
@@ -132,22 +147,27 @@ export default function TutorProfile() {
       // Pridobi dogodke
       await fetchDogodki(data.id)
 
+      // Pridobi bannerje
+      const { data: bannerData } = await supabase
+        .from('Bannerji')
+        .select('*')
+        .order('cena', { ascending: true })
+
+      if (bannerData) setBannerji(bannerData)
+
       setLoading(false)
     }
 
     const fetchPredmeti = async (tutorId: number) => {
-      // Pridobi vse predmete
       const { data: predmetiData } = await supabase
         .from('Predmeti')
         .select('id, naziv, fk_tipPredmeta_id')
         .order('naziv', { ascending: true })
 
-      // Pridobi tipe predmetov
       const { data: tipiData } = await supabase
         .from('Tip_predmeta')
         .select('id, naziv')
 
-      // Pridobi predmete, ki jih tutor že poučuje
       const { data: tutorPredmeti } = await supabase
         .from('Uporabniki_has_Predmeti')
         .select('fk_Predmeti')
@@ -173,6 +193,43 @@ export default function TutorProfile() {
 
     fetchTutor()
   }, [])
+
+  const kupiBanner = async (bannerId: number) => {
+    if (!tutor) return
+    
+    const banner = bannerji.find(b => b.id === bannerId)
+    if (!banner) return
+    
+    if (tutor.tocke < banner.cena) {
+      setError('Nimate dovolj točk za ta banner.')
+      return
+    }
+
+    try {
+      const { error } = await supabase
+        .from('Uporabniki')
+        .update({
+          tocke: tutor.tocke - banner.cena,
+          aktiven_banner: banner.slika_url
+        })
+        .eq('id', tutor.id)
+
+      if (error) throw error
+
+      const { data } = await supabase
+        .from('Uporabniki')
+        .select('*')
+        .eq('id', tutor.id)
+        .single()
+
+      if (data) {
+        setTutor(data)
+        setSuccess(`Uspešno ste aktivirali banner "${banner.naziv}"!`)
+      }
+    } catch (err) {
+      setError('Napaka pri nakupu bannerja: ' + (err as Error).message)
+    }
+  }
 
   const updateProfile = async () => {
     if (!tutor) return
@@ -414,11 +471,16 @@ export default function TutorProfile() {
     }
   }
 
-  if (loading) return <div className="tutor-profile-container"><p>Nalaganje...</p></div>
+   if (loading) return <div className="tutor-profile-container"><p>Nalaganje...</p></div>
   if (!tutor) return <div className="tutor-profile-container"><p>Ni najdenega tutor profila.</p></div>
 
   return (
     <div className="tutor-profile-container">
+      {tutor.aktiven_banner && (
+        <div className="profile-banner">
+          <img src={tutor.aktiven_banner} alt="Aktiven banner" />
+        </div>
+      )}
       <div className="profile-header">
         <div className="profile-info">
           <h1 className="profile-title">
@@ -479,7 +541,43 @@ export default function TutorProfile() {
           </div>
         )}
       </div>
+  {/* Bannerji section */}
+      <div className="section">
+        <div className="section-header">
+          <h2>Moji bannerji (Točke: {tutor.tocke})</h2>
+          <button 
+            className="edit-button" 
+            onClick={() => setBannerjiEditMode(!bannerjiEditMode)}
+          >
+            {bannerjiEditMode ? 'Prekliči' : 'Upgrade banner'}
+          </button>
+        </div>
 
+        {bannerjiEditMode ? (
+          <div className="bannerji-grid">
+            {bannerji.map(banner => (
+              <div key={banner.id} className="banner-card">
+                <img src={banner.slika_url} alt={banner.naziv} />
+                <h3>{banner.naziv}</h3>
+                <p>Cena: {banner.cena} točk</p>
+                <button
+                  className={`save-button ${tutor.tocke < banner.cena ? 'disabled' : ''}`}
+                  onClick={() => kupiBanner(banner.id)}
+                  disabled={tutor.tocke < banner.cena}
+                >
+                  {tutor.tocke >= banner.cena ? 'Aktiviraj' : 'Premalo točk'}
+                </button>
+              </div>
+            ))}
+          </div>
+        ) : (
+          <p>
+            {tutor.aktiven_banner 
+              ? 'Trenutno imate aktiviran banner.' 
+              : 'Trenutno nimate aktivnega bannerja.'}
+          </p>
+        )}
+      </div>
       {/* Sekcija za predmete */}
       <div className="section">
         <div className="section-header">
@@ -830,7 +928,8 @@ export default function TutorProfile() {
           </div>
         )}
       </div>
-      
+   {error && <div className="error-message">{error}</div>}
+      {success && <div className="success-message">{success}</div>}
     </div>
   )
 }

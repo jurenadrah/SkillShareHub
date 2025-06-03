@@ -1,7 +1,7 @@
 @import "tailwindcss";
 
 :root {
-  --background: #f9f1e7; /* BEIGE ozadje */
+  --background: #9e9d9c; /* BEIGE ozadje */
   --foreground: #efe6bd;
 
   /* Dodatne barvne spremenljivke, če jih želiš uporabljati globalno */

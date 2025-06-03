@@ -213,108 +213,111 @@ export default function Home() {
         <VideoPreview title="Class Title" duration="00:23" />
       </section>
 
-      {/* URNIK */}
-      <section className="py-12 bg-white">
-        <div className="max-w-7xl mx-auto px-4">
-          <h2 className="text-3xl font-bold mb-2 text-center">Tedenski Urnik</h2>
-          <p className="text-gray-600 mb-6 max-w-2xl mx-auto text-center">
-            Tukaj lahko najdeš naš tedenski urnik z delavnicami, predavanji in urjenji.
-            {user && " Klikni 'Pridruži se' za dodajanje v svoj koledar."}
+{/* URNIK */}
+<section className="py-12 bg-gray-50 border-2 border-gray-200 mx-4 rounded-lg shadow-md">
+  <div className="w-full px-6">
+    <h2 className="text-4xl font-extrabold text-gray-800 mb-4 text-center tracking-tight">Tedenski Urnik</h2>
+    <p className="text-gray-700 mb-6 max-w-2xl mx-auto text-center text-lg">
+      Tukaj lahko najdeš naš tedenski urnik z delavnicami, predavanji in urjenji.
+      {user && " Klikni 'Pridruži se' za dodajanje v svoj koledar."}
+    </p>
+
+    <div className="border-t border-gray-300 mt-6 mb-8 w-full max-w-3xl mx-auto" />
+
+    {/* Week navigation */}
+    <div className="mb-4 flex justify-center items-center">
+      <div className="flex items-center space-x-6">
+        <button
+          onClick={goToPreviousWeek}
+          className="bg-white text-gray-600 hover:text-gray-800 border border-gray-300 hover:bg-gray-100 rounded-full p-2 shadow-md transition"
+        >
+          <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" viewBox="0 0 20 20" fill="currentColor">
+            <path fillRule="evenodd" d="M12.707 5.293a1 1 0 010 1.414L9.414 10l3.293 3.293a1 1 0 01-1.414 1.414l-4-4a1 1 0 010-1.414l4-4a1 1 0 011.414 0z" clipRule="evenodd" />
+          </svg>
+        </button>
+
+        <div className="text-center min-w-80">
+          <p className="font-medium text-lg">
+            {format(currentWeekStart, 'd. MMMM', { locale: sl })} - {format(addDays(currentWeekStart, 6), 'd. MMMM yyyy', { locale: sl })}
           </p>
-          
-          {/* Week navigation */}
-          <div className="mb-4 flex justify-center items-center space-x-4">
-            <button 
-              onClick={goToPreviousWeek}
-              className="bg-gray-200 hover:bg-gray-300 rounded-full p-2"
-            >
-              <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" viewBox="0 0 20 20" fill="currentColor">
-                <path fillRule="evenodd" d="M12.707 5.293a1 1 0 010 1.414L9.414 10l3.293 3.293a1 1 0 01-1.414 1.414l-4-4a1 1 0 010-1.414l4-4a1 1 0 011.414 0z" clipRule="evenodd" />
-              </svg>
-            </button>
-            
-            <div className="text-center">
-              <p className="font-medium">
-                {format(currentWeekStart, 'd. MMMM', { locale: sl })} - {format(addDays(currentWeekStart, 6), 'd. MMMM yyyy', { locale: sl })}
-              </p>
-              <button 
-                onClick={goToCurrentWeek}
-                className="text-sm text-indigo-600 hover:text-indigo-800 underline mt-1"
-              >
-                Pojdi na trenutni teden
-              </button>
-            </div>
-            
-            <button 
-              onClick={goToNextWeek}
-              className="bg-gray-200 hover:bg-gray-300 rounded-full p-2"
-            >
-              <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" viewBox="0 0 20 20" fill="currentColor">
-                <path fillRule="evenodd" d="M7.293 14.707a1 1 0 010-1.414L10.586 10 7.293 6.707a1 1 0 011.414-1.414l4 4a1 1 0 010 1.414l-4 4a1 1 0 01-1.414 0z" clipRule="evenodd" />
-              </svg>
-            </button>
-          </div>
-          
-          {/* Filter */}
-          <div className="mb-8 flex justify-center">
-            <div className="w-full max-w-xs">
-              <label htmlFor="predmet-filter" className="block text-sm font-medium text-gray-700 mb-1">
-                Filtriraj po predmetu:
-              </label>
-              <select
-                id="predmet-filter"
-                onChange={handleFilterChange}
-                className="block w-full p-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500"
-              >
-                <option value="">Vsi predmeti</option>
-                {predmeti.map((predmet) => (
-                  <option key={predmet.id} value={predmet.id}>
-                    {predmet.naziv}
-                  </option>
-                ))}
-              </select>
-            </div>
-          </div>
-          
-          {loading ? (
-            <div className="text-center py-12">
-              <div className="inline-block animate-spin rounded-full h-8 w-8 border-4 border-indigo-500 border-t-transparent"></div>
-              <p className="mt-2 text-gray-600">Nalaganje urnika...</p>
-            </div>
-          ) : (
-            <div className="grid grid-cols-1 md:grid-cols-7 gap-4">
-              {weekDays.map((day) => {
-                // Filter events for this specific day of the week
-                const dayEvents = filteredEvents.filter(event => {
-                  const eventDate = parseISO(event.start_date_time)
-                  return isSameDay(eventDate, day)
-                })
-                
-                // Sort events by start time
-                dayEvents.sort((a, b) => 
-                  parseISO(a.start_date_time).getTime() - parseISO(b.start_date_time).getTime()
-                )
-                
-                // Check if this day is today
-                const isToday = isSameDay(day, new Date())
-                
-                // Check if this day is weekend (Saturday or Sunday)
-                const dayOfWeek = day.getDay()
-                const isWeekend = dayOfWeek === 0 || dayOfWeek === 6
-                
-                return (
-                  <div key={format(day, 'yyyy-MM-dd')} className="flex flex-col">
-                    <h3 className={`font-bold text-lg text-center p-2 rounded-t-lg ${
-                      isToday ? 'bg-orange-300' : 
-                      isWeekend ? 'bg-blue-200' : 'bg-orange-200'
-                    }`}>
-                      {formatDateHeader(day)}
-                    </h3>
-                    <div className={`flex-grow rounded-b-lg p-2 min-h-48 ${
+          <button
+            onClick={goToCurrentWeek}
+            className="text-sm text-indigo-600 hover:text-indigo-800 underline mt-1 whitespace-nowrap"
+          >
+            Pojdi na trenutni teden
+          </button>
+        </div>
+
+        <button
+          onClick={goToNextWeek}
+          className="bg-white text-gray-600 hover:text-gray-800 border border-gray-300 hover:bg-gray-100 rounded-full p-2 shadow-md transition"
+        >
+          <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" viewBox="0 0 20 20" fill="currentColor">
+            <path fillRule="evenodd" d="M7.293 14.707a1 1 0 010-1.414L10.586 10 7.293 6.707a1 1 0 011.414-1.414l4 4a1 1 0 010 1.414l-4 4a1 1 0 01-1.414 0z" clipRule="evenodd" />
+          </svg>
+        </button>
+      </div>
+    </div>
+
+    {/* Filter */}
+    <div className="mb-8 flex justify-center">
+      <div className="w-full max-w-xs">
+        <label htmlFor="predmet-filter" className="block text-sm font-medium text-gray-700 mb-1">
+          Filtriraj po predmetu:
+        </label>
+        <select
+          id="predmet-filter"
+          onChange={handleFilterChange}
+          className="block w-full p-2 border border-gray-300 rounded-lg shadow-sm focus:outline-none focus:ring-2 focus:ring-indigo-500 bg-white text-gray-700"
+        >
+          <option value="">Vsi predmeti</option>
+          {predmeti.map((predmet) => (
+            <option key={predmet.id} value={predmet.id}>
+              {predmet.naziv}
+            </option>
+          ))}
+        </select>
+      </div>
+    </div>
+
+    {loading ? (
+      <div className="text-center py-12">
+        <div className="inline-block animate-spin rounded-full h-8 w-8 border-4 border-indigo-500 border-t-transparent"></div>
+        <p className="mt-2 text-gray-600">Nalaganje urnika...</p>
+      </div>
+    ) : (
+      <div className="overflow-x-auto">
+        <div className="min-w-full grid grid-cols-7 gap-4" style={{ minWidth: '1400px' }}>
+          {weekDays.map((day) => {
+            const dayEvents = filteredEvents.filter(event => {
+              const eventDate = parseISO(event.start_date_time)
+              return isSameDay(eventDate, day)
+            })
+
+            dayEvents.sort((a, b) =>
+              parseISO(a.start_date_time).getTime() - parseISO(b.start_date_time).getTime()
+            )
+
+            const isToday = isSameDay(day, new Date())
+            const dayOfWeek = day.getDay()
+            const isWeekend = dayOfWeek === 0 || dayOfWeek === 6
+
+            return (
+              <div key={format(day, 'yyyy-MM-dd')} className="flex flex-col min-w-48">
+                <h3 className={`font-bold text-lg text-center p-2 rounded-t-lg ${
+                  isToday ? 'bg-orange-300 text-black' :
+                  isWeekend ? 'bg-blue-200 text-gray-800' : 'bg-orange-200 text-gray-800'
+                }`}>
+                  {formatDateHeader(day)}
+                </h3>
+                  <div
+                    className={`flex-grow rounded-b-lg min-h-48 ${
                       isWeekend ? 'bg-blue-50' : 'bg-orange-50'
-                    }`}>
-                      {dayEvents.length > 0 ? (
-                        dayEvents.map((event) => (
+                    }`}
+                  >
+                    {dayEvents.length > 0 ? (
+                      <div className="p-2 space-y-2">
+                        {dayEvents.map((event) => (
                           <EventCard
                             key={event.id}
                             event={event as any}
@@ -322,32 +325,36 @@ export default function Home() {
                             isJoined={joinedEvents.has(event.id)}
                             onJoinSuccess={handleJoinSuccess}
                           />
-                        ))
-                      ) : (
-                        <p className="text-center text-gray-500 text-sm py-4">
-                          Ni najdenih dogodkov
+                        ))}
+                      </div>
+                    ) : (
+                      <div className="h-full flex items-center justify-center px-4 py-6">
+                        <p className="text-center text-gray-500 text-sm italic max-w-[90%]">
+                          🎉 Ta dan je prost – čas za počitek, kavo ali sprehod! ☕🌿
                         </p>
-                      )}
-                    </div>
+                      </div>
+                    )}
                   </div>
-                )
-              })}
-            </div>
-          )}
-
-          {/* Login prompt for non-authenticated users */}
-          {!user && (
-            <div className="mt-8 text-center p-6 bg-blue-50 rounded-lg border border-blue-200">
-              <p className="text-blue-800 mb-2">
-                <svg className="h-5 w-5 inline mr-2" fill="currentColor" viewBox="0 0 20 20">
-                  <path fillRule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7-4a1 1 0 11-2 0 1 1 0 012 0zM9 9a1 1 0 000 2v3a1 1 0 001 1h1a1 1 0 100-2v-3a1 1 0 00-1-1H9z" clipRule="evenodd" />
-                </svg>
-                Prijavite se za dodajanje dogodkov v vaš osebni koledar
-              </p>
-            </div>
-          )}
+              </div>
+            )
+          })}
         </div>
-      </section>
+      </div>
+    )}
+
+    {/* Login prompt for non-authenticated users */}
+    {!user && (
+      <div className="mt-8 text-center p-6 bg-blue-50 rounded-lg border border-blue-200">
+        <p className="text-blue-800 mb-2">
+          <svg className="h-5 w-5 inline mr-2" fill="currentColor" viewBox="0 0 20 20">
+            <path fillRule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7-4a1 1 0 11-2 0 1 1 0 012 0zM9 9a1 1 0 000 2v3a1 1 0 001 1h1a1 1 0 100-2v-3a1 1 0 00-1-1H9z" clipRule="evenodd" />
+          </svg>
+          Prijavite se za dodajanje dogodkov v vaš osebni koledar
+        </p>
+      </div>
+    )}
+  </div>
+</section>
 
       {/* O SKILLHUBU */}
       <section className="py-16 bg-white text-center">
@@ -355,22 +362,6 @@ export default function Home() {
         <p className="max-w-3xl mx-auto text-gray-600 mb-8">
           SkillHub je inovativna platforma, ki ti pomaga izboljšati študijske spretnosti in omogoča učenje skozi nove tehnike ter izmenjavo znanja znotraj študentske skupnosti.
         </p>
-        
-        {users.length > 0 && (
-          <div className="max-w-2xl mx-auto">
-            <h3 className="text-xl font-bold mb-3">Naši tutorji</h3>
-            <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4">
-              {users
-                .filter(user => user.tutor)
-                .map((user) => (
-                  <div key={user.id} className="bg-gray-50 p-4 rounded-lg shadow-sm">
-                    <p className="font-medium">{user.ime} {user.priimek}</p>
-                    <p className="text-sm text-gray-600">{user.email}</p>
-                  </div>
-                ))}
-            </div>
-          </div>
-        )}
       </section>
 
       {/* KONTAKTNA SEKCIJA */}

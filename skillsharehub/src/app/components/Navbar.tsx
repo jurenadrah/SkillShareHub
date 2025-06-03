@@ -68,9 +68,10 @@ export default function Navbar() {
 
   return (
     <>
-      <nav className="flex justify-between items-center px-6 py-4 bg-white shadow-md">
+      <nav className="flex justify-between items-ce nter px-6 py-4 bg-white shadow-md">
         <div className="flex items-center space-x-6">
           <a href="#" className="text-gray-700 hover:underline">About</a>
+          <a className="text-blue-600 hover:underline" href='/'>Home</a>
           {user ? (
             <button
               onClick={handleProfileClick}
@@ -123,7 +124,7 @@ export default function Navbar() {
           {user ? (
             <>
               <span className="text-sm text-gray-700 ml-2">
-                Pozdravljen, {user.email}
+                Pozdravljen/a, {user.email}
               </span>
               <button
                 onClick={signOut}

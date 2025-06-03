@@ -19,6 +19,7 @@ type UserEvent = {
     fk_id_uporabnik?: {
       ime: string
       priimek?: string
+      zoom_link?: string // Add zoom_link here
     } | null
     predmet?: {
       naziv: string
@@ -36,6 +37,16 @@ export default function MyEvents({ userEvents, onEventRemoved, hasGoogleConnecte
   const [leavingEvents, setLeavingEvents] = useState(new Set<number>())
   const [messages, setMessages] = useState(new Map<number, { type: 'success' | 'error' | 'info', text: string }>())
   const [eventDetails, setEventDetails] = useState(new Map<number, any>())
+  const [currentTime, setCurrentTime] = useState(new Date())
+
+  // Update current time more frequently for better accuracy
+  useEffect(() => {
+    const timer = setInterval(() => {
+      setCurrentTime(new Date())
+    }, 30000) // Update every 30 seconds for better accuracy
+
+    return () => clearInterval(timer)
+  }, [])
 
   // Fetch detailed event information for each event
   useEffect(() => {
@@ -48,9 +59,10 @@ export default function MyEvents({ userEvents, onEventRemoved, hasGoogleConnecte
             .from('Event')
             .select(`
               *,
-              fk_id_uporabnik (
+              fk_id_uporabnik:Uporabniki!fk_id_uporabnik (
                 ime,
-                priimek
+                priimek,
+                zoom_link
               )
             `)
             .eq('id', userEvent.event.id)
@@ -71,6 +83,23 @@ export default function MyEvents({ userEvents, onEventRemoved, hasGoogleConnecte
       fetchEventDetails()
     }
   }, [userEvents])
+
+  // Check if meeting button should be shown (15 minutes before start time until event ends)
+  const shouldShowMeetingButton = (startDateTime: string, endDateTime: string) => {
+    const eventStart = new Date(startDateTime)
+    const eventEnd = new Date(endDateTime) // Use actual end time
+    const fifteenMinutesBefore = new Date(eventStart.getTime() - 15 * 60 * 1000)
+    
+    // Show button from 15 minutes before until the event ends
+    return currentTime >= fifteenMinutesBefore && currentTime <= eventEnd
+  }
+
+  // Get zoom link for the event
+  const getZoomLink = (userEvent: UserEvent) => {
+    const eventDetail = eventDetails.get(userEvent.event.id)
+    return eventDetail?.fk_id_uporabnik?.zoom_link || 
+           userEvent.event.fk_id_uporabnik?.zoom_link
+  }
 
   // Refresh Google token
   const refreshGoogleToken = async (): Promise<string | null> => {
@@ -290,6 +319,11 @@ export default function MyEvents({ userEvents, onEventRemoved, hasGoogleConnecte
         const isLeaving = leavingEvents.has(userEvent.id)
         const currentMessage = messages.get(userEvent.id)
         const eventDetail = eventDetails.get(userEvent.event.id)
+        const zoomLink = getZoomLink(userEvent)
+        const showMeetingButton = shouldShowMeetingButton(
+          userEvent.event.start_date_time,
+          userEvent.event.end_date_time
+        )
         
         return (
           <div
@@ -324,6 +358,23 @@ export default function MyEvents({ userEvents, onEventRemoved, hasGoogleConnecte
                   <p>{dateStr}</p>
                   <p>{timeStr}</p>
                 </div>
+
+                {/* Join Meeting Button - shows 15 minutes before event until event ends */}
+                {showMeetingButton && zoomLink && (
+                  <div className="mt-3">
+                    <a
+                      href={zoomLink}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="inline-flex items-center px-4 py-2 bg-green-600 text-white text-sm font-medium rounded-md hover:bg-green-700 transition-colors"
+                    >
+                      <svg className="w-4 h-4 mr-2" fill="currentColor" viewBox="0 0 20 20">
+                        <path fillRule="evenodd" d="M12.586 4.586a2 2 0 112.828 2.828l-3 3a2 2 0 01-2.828 0 1 1 0 00-1.414 1.414 4 4 0 005.656 0l3-3a4 4 0 00-5.656-5.656l-1.5 1.5a1 1 0 101.414 1.414l1.5-1.5zm-5 5a2 2 0 012.828 0 1 1 0 101.414-1.414 4 4 0 00-5.656 0l-3 3a4 4 0 105.656 5.656l1.5-1.5a1 1 0 10-1.414-1.414l-1.5 1.5a2 2 0 11-2.828-2.828l3-3z" clipRule="evenodd" />
+                      </svg>
+                      Pridruži se srečanju
+                    </a>
+                  </div>
+                )}
                 
                 {/* Google Calendar sync status */}
                 <div className="flex items-center mt-2">

@@ -180,8 +180,10 @@ export default function EventCard({ event, user, isJoined, onJoinSuccess }: Even
 
   return (
     <div className="mb-3 bg-white p-4 rounded-lg shadow-sm border-l-4 border-orange-400 hover:shadow-md transition-shadow">
-      <p className="font-semibold text-gray-800 mb-1">{event.title}</p>
-      <p className="text-sm text-gray-600 mb-2">{event.description}</p>
+      <p className="font-semibold text-gray-800 mb-1" title={event.description}>
+        {event.title}
+      </p>
+      {/*<p className="text-sm text-gray-600 mb-2">{event.description}</p>*/}
       <div className="text-sm italic text-gray-700 mb-2">
         <p className="text-sm italic text-gray-700 mb-2">
           Predavatelj: <br />
@@ -196,10 +198,12 @@ export default function EventCard({ event, user, isJoined, onJoinSuccess }: Even
           </p>
       </div>
       
-      <div className="flex justify-between items-center mb-3">
-        <span className="text-xs bg-gray-100 px-2 py-1 rounded">
-          {formatTime(event.start_date_time)} - {formatTime(event.end_date_time)}
-        </span>
+      <div className="flex flex-col justify-between items-center mb-3">
+        <div>
+          <span className="text-xs bg-gray-100 px-2 py-1 rounded">
+            {formatTime(event.start_date_time)} - {formatTime(event.end_date_time)}
+          </span>
+        </div>
         {event.predmet_naziv && (
           <span className="text-xs bg-orange-100 px-2 py-1 rounded">
             {event.predmet_naziv}

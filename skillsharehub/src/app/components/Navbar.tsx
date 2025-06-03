@@ -1,6 +1,6 @@
 'use client'
 
-import { useEffect, useState } from 'react'
+import { useEffect, useState, useRef } from 'react'
 import { useRouter } from 'next/navigation'
 import { supabase } from '@/lib/supabase'
 import AuthForm from './AuthForm'
@@ -11,20 +11,35 @@ export default function Navbar() {
   const [user, setUser] = useState<any>(null)
   const [showAuthModal, setShowAuthModal] = useState(false)
 
+  const initialCheckDone = useRef(false)
+  const previousUser = useRef<any>(null)
+
   useEffect(() => {
     const getUser = async () => {
       const { data } = await supabase.auth.getUser()
       setUser(data.user)
+      previousUser.current = data.user
+      initialCheckDone.current = true
     }
 
     getUser()
 
     const { data: listener } = supabase.auth.onAuthStateChange((event, session) => {
-      setUser(session?.user ?? null)
-      if (event === 'SIGNED_IN') {
-        setShowAuthModal(false)
-        window.location.reload()  // ✅ reload only on login
+      const newUser = session?.user ?? null
+      setUser(newUser)
+
+      // 🚀 Refresh if user logs in or logs out (not during silent token refreshes)
+      if (initialCheckDone.current) {
+        const wasLoggedIn = previousUser.current !== null
+        const isLoggedIn = newUser !== null
+
+        if (wasLoggedIn !== isLoggedIn) {
+          previousUser.current = newUser
+          window.location.reload()
+        }
       }
+
+      previousUser.current = newUser
     })
 
     return () => {
@@ -34,8 +49,8 @@ export default function Navbar() {
 
   const signOut = async () => {
     await supabase.auth.signOut()
-    router.push('/')
-  }
+    setShowAuthModal(false)
+    }
 
   const handleHomeClick = () => {
     router.push('/')

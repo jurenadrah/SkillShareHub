@@ -1,0 +1,33 @@
+.aboutContainer {
+  max-width: 800px;
+  margin: 0 auto;
+  padding: 40px 20px;
+  background-color: #fdfdfd;
+  border-radius: 12px;
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.1);
+}
+
+.aboutTitle {
+  font-size: 2.5rem;
+  color: #e63946;
+  margin-bottom: 24px;
+  text-align: center;
+}
+
+.aboutText {
+  font-size: 1.2rem;
+  color: #333;
+  line-height: 1.8;
+  margin-bottom: 16px;
+}
+
+.imageWrapper {
+  text-align: center;
+  margin-bottom: 24px;
+}
+
+.aboutImage {
+  max-width: 100%;
+  height: auto;
+  border-radius: 8px;
+}

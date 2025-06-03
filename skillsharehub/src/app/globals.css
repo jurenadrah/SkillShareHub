@@ -1,11 +1,11 @@
 @import "tailwindcss";
 
 :root {
-  --background: #9e9d9c; /* BEIGE ozadje */
-  --foreground: #efe6bd;
+  --background: #d8cfc6; /* BEIGE ozadje */
+  --foreground: #cec9bc;
 
   /* Dodatne barvne spremenljivke, če jih želiš uporabljati globalno */
-  --beige: #f9f1e7;
+  --beige: #e6dccb;
   --dark-text: #efe6bd;
 }
 
@@ -18,7 +18,7 @@
 
 @media (prefers-color-scheme: dark) {
   :root {
-    --background: #efe6bd;
+    --background: #e0d9c7;
     --foreground: #561e1e; /* Kontrastna svetla barva za temni način */
   }
 }

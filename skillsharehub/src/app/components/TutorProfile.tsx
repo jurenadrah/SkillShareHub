@@ -85,12 +85,19 @@ export default function TutorProfile() {
   // Urnik
   const [dogodki, setDogodki] = useState<Event[]>([])
   const [eventType, setEventType] = useState<'single' | 'recurring'>('single')
-
-  const toLocalISOString = (date: Date): string => {
-  const offset = date.getTimezoneOffset()
-  const localDate = new Date(date.getTime() - offset * 60000)
-  return localDate.toISOString().slice(0, 16)
-  } 
+  const toLocalDateTimeString = (date: Date): string => {
+  const year = date.getFullYear();
+  const month = String(date.getMonth() + 1).padStart(2, '0');
+  const day = String(date.getDate()).padStart(2, '0');
+  const hours = String(date.getHours()).padStart(2, '0');
+  const minutes = String(date.getMinutes()).padStart(2, '0');
+  
+  return `${year}-${month}-${day}T${hours}:${minutes}`;
+  };
+  
+  const toISOString = (localDateTimeString: string): string => {
+  return new Date(localDateTimeString).toISOString();
+  };
 
   const [novDogodek, setNovDogodek] = useState<Event>({
     fk_id_predmet: NaN,
@@ -98,23 +105,16 @@ export default function TutorProfile() {
     title: '',
     description: '',
     day_of_week: null,
-    start_date_time: toLocalISOString(new Date()),
-    end_date_time: toLocalISOString(new Date(Date.now() + 60 * 60 * 1000)),
+    start_date_time: toLocalDateTimeString(new Date()),
+    end_date_time: toLocalDateTimeString(new Date(Date.now() + 60 * 60 * 1000)),
     event_type: 'single',
-    recurrence_end_date: toLocalISOString(new Date()),
-  })
+    recurrence_end_date: toLocalDateTimeString(new Date()),
+  });
 
   const [ocene, setOcene] = useState<Ocena[]>([])
   const [bannerji, setBannerji] = useState<Banner[]>([])
   const [error, setError] = useState<string | null>(null)
   const [success, setSuccess] = useState<string | null>(null)
-  
-  const formatDateTime = (dateTimeString: string) => {
-    return new Date(dateTimeString).toLocaleString('sl-SI', {
-      dateStyle: 'short',
-      timeStyle: 'short',
-    })
-  }
 
   const updateProfile = async () => {
   if (!tutor) return;
@@ -246,8 +246,17 @@ export default function TutorProfile() {
         .eq('fk_id_uporabnik', tutorId)
         .order('day_of_week', { ascending: true })
         .order('start_date_time', { ascending: true })
-
-      if (data) setDogodki(data)
+    
+      if (data) {
+        // Convert ISO strings to local datetime format for display
+        const convertedData = data.map(event => ({
+          ...event,
+          start_date_time: event.start_date_time ? toLocalDateTimeString(new Date(event.start_date_time)) : event.start_date_time,
+          end_date_time: event.end_date_time ? toLocalDateTimeString(new Date(event.end_date_time)) : event.end_date_time,
+          recurrence_end_date: event.recurrence_end_date ? toLocalDateTimeString(new Date(event.recurrence_end_date)) : event.recurrence_end_date
+        }));
+        setDogodki(convertedData);
+      }
     }
 
     fetchTutor()
@@ -519,47 +528,56 @@ const handleBannerUpload = async (e: React.ChangeEvent<HTMLInputElement>, banner
       }
     }
 
-    try {
-      const dogodekZaShranjevanje = {
-        ...novDogodek,
-        fk_id_uporabnik: tutor.id,
-        event_type: eventType,
-        day_of_week: eventType === 'single' ? null : novDogodek.day_of_week
-      }
-
-      const { error } = await supabase
-        .from('Event')
-        .insert([dogodekZaShranjevanje])
-
-      if (error) throw error
-
-      // Osveži seznam dogodkov
-      const { data } = await supabase
-        .from('Event')
-        .select('*')
-        .eq('fk_id_uporabnik', tutor.id)
-
-      if (data) setDogodki(data)
-
-      // Ponastavi obrazec
-      setNovDogodek({
-        fk_id_predmet: NaN,
-        fk_id_uporabnik: NaN,
-        title: '',
-        description: '',
-        day_of_week: null,
-        start_date_time: toLocalISOString(new Date()),
-        end_date_time: toLocalISOString(new Date(Date.now() + 60 * 60 * 1000)),
-        event_type: 'single',
-        recurrence_end_date: toLocalISOString(new Date()),
-      })
-
-      setEventType('single')
-      setSuccess('Dogodek uspešno dodan!')
-    } catch (err) {
-      setError('Napaka pri dodajanju dogodka: ' + (err as Error).message)
+  try {
+    const dogodekZaShranjevanje = {
+      ...novDogodek,
+      fk_id_uporabnik: tutor.id,
+      event_type: eventType,
+      day_of_week: eventType === 'single' ? null : novDogodek.day_of_week,
+      // Convert local datetime strings to ISO for database storage
+      start_date_time: toISOString(novDogodek.start_date_time),
+      end_date_time: toISOString(novDogodek.end_date_time),
+      recurrence_end_date: novDogodek.recurrence_end_date ? toISOString(novDogodek.recurrence_end_date) : null
     }
+
+    const { error, data: insertedEvent } = await supabase
+      .from('Event')
+      .insert([dogodekZaShranjevanje])
+      .select()
+      .single()
+
+    if (error) throw error
+
+    // Add the new event to existing state (convert back to local time for display)
+    if (insertedEvent) {
+      const newEventForDisplay = {
+        ...insertedEvent,
+        start_date_time: toLocalDateTimeString(new Date(insertedEvent.start_date_time)),
+        end_date_time: toLocalDateTimeString(new Date(insertedEvent.end_date_time)),
+        recurrence_end_date: insertedEvent.recurrence_end_date ? toLocalDateTimeString(new Date(insertedEvent.recurrence_end_date)) : null
+      };
+      setDogodki(prevDogodki => [...prevDogodki, newEventForDisplay]);
+    }
+
+    // Reset form with local time
+    setNovDogodek({
+      fk_id_predmet: NaN,
+      fk_id_uporabnik: NaN,
+      title: '',
+      description: '',
+      day_of_week: null,
+      start_date_time: toLocalDateTimeString(new Date()),
+      end_date_time: toLocalDateTimeString(new Date(Date.now() + 60 * 60 * 1000)),
+      event_type: 'single',
+      recurrence_end_date: toLocalDateTimeString(new Date())
+    })
+
+    setEventType('single')
+    setSuccess('Dogodek uspešno dodan!')
+  } catch (err) {
+    setError('Napaka pri dodajanju dogodka: ' + (err as Error).message)
   }
+}
 
   const izbrisiDogodek = async (id: number) => {
     try {
@@ -988,29 +1006,18 @@ const handleBannerUpload = async (e: React.ChangeEvent<HTMLInputElement>, banner
                         <strong>{dogodek.title}</strong>
                         {dogodek.event_type === 'recurring' ? (
                           <>
-                            <p>
-                              Ponavljajoči se termin: {dogodek.day_of_week}{' '}
-                              {formatDateTime(dogodek.start_date_time).split(', ')[1]} -{' '}
-                              {formatDateTime(dogodek.end_date_time).split(', ')[1]}
-                            </p>
+                            <p>Ponavljajoči se termin: {dogodek.day_of_week} {dogodek.start_date_time.split('T')[1]} - {dogodek.end_date_time.split('T')[1]}</p>
                             {dogodek.recurrence_end_date && (
-                              <p>Do: {formatDateTime(dogodek.recurrence_end_date).split(',')[0]}</p>
+                              <p>Do: {new Date(dogodek.recurrence_end_date).toLocaleDateString()}</p>
                             )}
                           </>
                         ) : (
-                          <p>
-                            Enkratni termin: {formatDateTime(dogodek.start_date_time).split(',')[0]}{' '}
-                            {formatDateTime(dogodek.start_date_time).split(', ')[1]} -{' '}
-                            {formatDateTime(dogodek.end_date_time).split(', ')[1]}
-                          </p>
+                          <p>Enkratni termin: {new Date(dogodek.start_date_time).toLocaleDateString()} {dogodek.start_date_time.split('T')[1]} - {dogodek.end_date_time.split('T')[1]}</p>
                         )}
-                        <p>
-                          Predmet:{' '}
-                          {predmeti.find(p => p.id === dogodek.fk_id_predmet)?.naziv || 'Neznan predmet'}
-                        </p>
+                        <p>Predmet: {predmeti.find(p => p.id === dogodek.fk_id_predmet)?.naziv || 'Neznan predmet'}</p>
                         {dogodek.description && <p>Opis: {dogodek.description}</p>}
                       </div>
-                      <button
+                      <button 
                         className="delete-button"
                         onClick={() => dogodek.id && izbrisiDogodek(dogodek.id)}
                       >
@@ -1020,67 +1027,59 @@ const handleBannerUpload = async (e: React.ChangeEvent<HTMLInputElement>, banner
                   ))}
                 </ul>
               )}
-            </div>;
+            </div>
           </div>
         ) : (
           <div className="urnik-view">
-  {dogodki.length === 0 ? (
-    <p>Ni dodanih terminov.</p>
-  ) : (
-    <div className="urnik-grid">
-      {/* Prikaz ponavljajočih se terminov po dnevih */}
-      {['Ponedeljek', 'Torek', 'Sreda', 'Četrtek', 'Petek', 'Sobota', 'Nedelja'].map(dan => {
-        const dogodkiNaDan = dogodki.filter(d => 
-          d.event_type === 'recurring' && d.day_of_week === dan
-        )
-        return dogodkiNaDan.length > 0 ? (
-          <div key={dan} className="urnik-dan">
-            <h3>{dan}</h3>
-            <ul>
-              {dogodkiNaDan.map(dogodek => (
-                <li key={dogodek.id}>
-                  <strong>{dogodek.title}</strong> (
-                  {formatDateTime(dogodek.start_date_time).split(', ')[1]} - {formatDateTime(dogodek.end_date_time).split(', ')[1]}
+            {dogodki.length === 0 ? (
+              <p>Ni dodanih terminov.</p>
+            ) : (
+              <div className="urnik-grid">
+                {/* Prikaz ponavljajočih se terminov po dnevih */}
+                {['Ponedeljek', 'Torek', 'Sreda', 'Četrtek', 'Petek', 'Sobota', 'Nedelja'].map(dan => {
+                  const dogodkiNaDan = dogodki.filter(d => 
+                    d.event_type === 'recurring' && d.day_of_week === dan
                   )
-                  <p>
-                    Predmet: {predmeti.find(p => p.id === dogodek.fk_id_predmet)?.naziv || 'Neznan predmet'}
-                  </p>
-                  {dogodek.recurrence_end_date && (
-                    <p>Do: {formatDateTime(dogodek.recurrence_end_date).split(',')[0]}</p>
+                  return dogodkiNaDan.length > 0 ? (
+                    <div key={dan} className="urnik-dan">
+                      <h3>{dan}</h3>
+                      <ul>
+                        {dogodkiNaDan.map(dogodek => (
+                          <li key={dogodek.id}>
+                            <strong>{dogodek.title}</strong> ({dogodek.start_date_time.split('T')[1]} - {dogodek.end_date_time.split('T')[1]})
+                            <p>Predmet: {predmeti.find(p => p.id === dogodek.fk_id_predmet)?.naziv || 'Neznan predmet'}</p>
+                            {dogodek.recurrence_end_date && (
+                              <p>Do: {new Date(dogodek.recurrence_end_date).toLocaleDateString()}</p>
+                            )}
+                          </li>
+                        ))}
+                      </ul>
+                    </div>
+                  ) : null
+                })}
+
+                {/* Prikaz enkratnih terminov v ločenem delu */}
+                <div className="enkratni-termini">
+                  <h3>Enkratni termini</h3>
+                  {dogodki.filter(d => d.event_type === 'single').length === 0 ? (
+                    <p>Ni enkratnih terminov.</p>
+                  ) : (
+                    <ul>
+                      {dogodki
+                        .filter(d => d.event_type === 'single')
+                        .map(dogodek => (
+                          <li key={dogodek.id}>
+                            <strong>{dogodek.title}</strong> ({new Date(dogodek.start_date_time).toLocaleDateString()} {dogodek.start_date_time.split('T')[1]} - {dogodek.end_date_time.split('T')[1]})
+                            <p>Predmet: {predmeti.find(p => p.id === dogodek.fk_id_predmet)?.naziv || 'Neznan predmet'}</p>
+                          </li>
+                        ))}
+                    </ul>
                   )}
-                </li>
-              ))}
-            </ul>
+                </div>
+             
+              </div>
+            )}   
           </div>
-        ) : null
-      })}
-
-      {/* Prikaz enkratnih terminov v ločenem delu */}
-      <div className="enkratni-termini">
-        <h3>Enkratni termini</h3>
-        {dogodki.filter(d => d.event_type === 'single').length === 0 ? (
-          <p>Ni enkratnih terminov.</p>
-        ) : (
-          <ul>
-            {dogodki
-              .filter(d => d.event_type === 'single')
-              .map(dogodek => (
-                <li key={dogodek.id}>
-                  <strong>{dogodek.title}</strong> (
-                  {formatDateTime(dogodek.start_date_time).split(',')[0]} {formatDateTime(dogodek.start_date_time).split(', ')[1]} - {formatDateTime(dogodek.end_date_time).split(', ')[1]}
-                  )
-                  <p>
-                    Predmet: {predmeti.find(p => p.id === dogodek.fk_id_predmet)?.naziv || 'Neznan predmet'}
-                  </p>
-                </li>
-              ))}
-          </ul>
-        )}
-      </div>
-    </div>
-  )}
-</div>
-
         )}
       </div>{error && <div className="error-message">{error}</div>}
       {success && <div className="success-message">{success}</div>}

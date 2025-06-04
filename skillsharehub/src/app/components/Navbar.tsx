@@ -68,26 +68,30 @@ export default function Navbar() {
 
   return (
     <>
-      <nav className="flex justify-between items-center px-6 py-4 bg-white shadow-md">
+      <nav className="flex justify-between items-center px-6 py-4 bg-[#1e1e1e] shadow-md">
         <div className="flex items-center space-x-6">
-           <button 
-          onClick={handleHomeClick}
-          className="text-xl font-bold text-center hover:text-indigo-600 transition-colors cursor-pointer"
-          type="button"
-        >
-          📷 SkillShareHub
-        </button>
+         <button 
+  onClick={handleHomeClick}
+  className="h-20 hover:opacity-80 transition-opacity cursor-pointer"
+  type="button"
+>
+  <img 
+    src="/logo.png" 
+    alt="SkillShareHub Logo"
+    className="h-full w-auto" 
+  />
+</button>
      {user ? (
             <button
               onClick={handleProfileClick}
               className="text-blue-600 hover:underline"
               type="button"
             >
-                        <a href="/about" className="text-gray-700 hover:underline">O SkillShareHub</a>
+                        <a href="/about" className="text-gray-700 hover:underline">O SKILLSHAREHUB-U</a>
 
             </button>
           ) : (
-            <span className="text-gray-400 cursor-not-allowed">O SkillShareHub</span>
+            <span className="text-gray-400 cursor-not-allowed">O SKILLSHAREHUB-U</span>
           )}
           {user ? (
             <button
@@ -95,10 +99,10 @@ export default function Navbar() {
               className="text-blue-600 hover:underline"
               type="button"
             >
-              Moj profil
+              MOJ PROFIL
             </button>
           ) : (
-            <span className="text-gray-400 cursor-not-allowed">Moj profil</span>
+            <span className="text-gray-400 cursor-not-allowed">MOJ PROFIL</span>
           )}
           {user ? (
             <button
@@ -106,10 +110,10 @@ export default function Navbar() {
               className="text-blue-600 hover:underline"
               type="button"
             >
-              Posti
+              OBJAVE
             </button>
           ) : (
-            <span className="text-gray-400 cursor-not-allowed">Posti</span>
+            <span className="text-gray-400 cursor-not-allowed">OBJAVE</span>
           )}
           {user ? (
             <button
@@ -117,10 +121,10 @@ export default function Navbar() {
               className="text-blue-600 hover:underline"
               type="button"
             >
-              Sporočila
+              SPOROČILA
             </button>
           ) : (
-            <span className="text-gray-400 cursor-not-allowed">Sporočila</span>
+            <span className="text-gray-400 cursor-not-allowed">SPOROČILA</span>
           )}
         </div>
 
@@ -128,14 +132,14 @@ export default function Navbar() {
           {user ? (
             <>
               <span className="text-sm text-gray-700 ml-2">
-                Pozdravljen/a, {user.email}
+                POZDRAVLJEN/A, {user.email}
               </span>
               <button
                 onClick={signOut}
                 className="ml-2 px-3 py-1 bg-orange-200 rounded hover:bg-orange-300 transition"
                 type="button"
               >
-                Odjava
+                ODJAVA
               </button>
             </>
           ) : (
@@ -145,7 +149,7 @@ export default function Navbar() {
                 className="ml-2 px-3 py-1 bg-indigo-500 text-white rounded hover:bg-indigo-600 transition"
                 type="button"
               >
-                Prijava / Registracija
+                PRIJAVA / REGISTRACIJA
               </button>
             </>
           )}

@@ -6,8 +6,8 @@ export default function AboutPage() {
     <div className={styles.aboutContainer}>
       <h1 className={styles.aboutTitle}>O nas – SkillShareHub</h1>
 
-      <div className={styles.gallery}>
-        <div className={styles.imageCard}>
+      <div className={styles.contentBlock}>
+        <div className={styles.imageWrapper}>
           <Image
             src="/slikaAbout1.webp"
             alt="Skupnost dijakov in študentov"
@@ -16,7 +16,19 @@ export default function AboutPage() {
             className={styles.aboutImage}
           />
         </div>
-        <div className={styles.imageCard}>
+        <div className={styles.textWrapper}>
+          <h2 className={styles.sectionTitle}>Skupnost znanja</h2>
+          <p className={styles.aboutText}>
+  <strong>SkillShareHub</strong> je platforma, ki povezuje mlade – radovedne umove, ki si želijo učiti in biti
+  učeni. Verjamemo, da ima vsak posameznik nekaj, kar lahko deli z drugimi. Ker se zavedamo, da ni vsak posameznik za vse, smo ustvarili platformo,
+  kjer si lahko mladi to znanje delijo. Naš cilj je omogočiti varno, dostopno in vključujoče okolje za učenje.
+</p>
+
+        </div>
+      </div>
+
+      <div className={`${styles.contentBlock} ${styles.reverse}`}>
+        <div className={styles.imageWrapper}>
           <Image
             src="/slikaAbout2.webp"
             alt="Mentorstvo in sodelovanje"
@@ -25,7 +37,19 @@ export default function AboutPage() {
             className={styles.aboutImage}
           />
         </div>
-        <div className={styles.imageCard}>
+        <div className={styles.textWrapper}>
+          <h2 className={styles.sectionTitle}>Povezovanje dijakov in študentov</h2>
+          <p className={styles.aboutText}>
+  SkillShareHub omogoča, da se tisti, ki imajo znanje, povežejo z drugimi, ki si želijo tega znanja. Mentorstvo,
+  sodelovanje in vzajemno učenje so v središču naše skupnosti. Dijaki in študenti imajo možnost deliti znanje z drugimi, ki potrebujejo pomoč,
+  v zameno pa se tudi sami naučijo od drugih. Tako gradimo mrežo sodelovanja in medsebojne podpore.
+</p>
+
+        </div>
+      </div>
+
+      <div className={styles.contentBlock}>
+        <div className={styles.imageWrapper}>
           <Image
             src="/slikaAbout3.webp"
             alt="Skupinsko učenje"
@@ -34,22 +58,115 @@ export default function AboutPage() {
             className={styles.aboutImage}
           />
         </div>
+        <div className={styles.textWrapper}>
+          <h2 className={styles.sectionTitle}>Učenje, ki združuje</h2>
+         <p className={styles.aboutText}>
+  Učenje je lahko zabavno, dostopno in povezovalno. Pri nas ni pomembno, ali obvladaš matematiko, programiranje
+  ali umetnost – vsak prispeva svoj delček znanja in gradi celoto. Omogoča povezovanje z drugimi od kjerkoli na svetu.
+  Skupno učenje postane navdihujoča izkušnja, ki bogati vse udeležence.
+</p>
+
+        </div>
       </div>
 
-      <div className={styles.textSection}>
+      <div className={`${styles.contentBlock} ${styles.reverse}`}>
+        <div className={styles.imageWrapper}>
+          <Image
+            src="/about4.webp"
+            alt="Učimo se skupaj"
+            width={400}
+            height={250}
+            className={styles.aboutImage}
+          />
+        </div>
+        <div className={styles.textWrapper}>
+          <h2 className={styles.sectionTitle}>Ustvarjamo priložnosti</h2>
         <p className={styles.aboutText}>
-          <strong>SkillShareHub</strong> je prostor, kjer se povezujejo radovedni um in odprto srce. Ustvarili smo
-          skupnost za študente in dijake, ki verjamejo, da se znanje množi, ko ga delimo.
-        </p>
-        <p className={styles.aboutText}>
-          Naša aplikacija omogoča enostavno povezovanje mladih, ki želijo učiti druge ali se sami naučiti nečesa novega.
-        </p>
-        <p className={styles.aboutText}>
-          Ne glede na to, ali si mojstrica matematike, navdušenec nad programiranjem ali nekdo, ki želi deliti znanje o
-          pisanju esejev – SkillShareHub je tukaj zate. Skupaj gradimo skupnost, kjer je učenje zabavno, dostopno in
-          medsebojno.
-        </p>
+  SkillShareHub ni zgolj platforma, temveč gibanje – gibanje, ki mladim omogoča osebni in strokovni razvoj,
+  samozavestno deljenje znanja ter navezovanje trajnih poznanstev. Vsak dobi priložnost deliti nekaj z drugimi, brez
+  potrebe po usklajevanju urnikov ter prevoznih stroškov. Vse poteka digitalno, a s pristnim človeškim stikom.
+</p>
+
+        </div>
       </div>
+       {/* KONTAKTNA SEKCIJA */}
+<section className="bg-black text-white py-16">
+  <div className="max-w-6xl mx-auto px-4 grid md:grid-cols-2 gap-8">
+    {/* Left Column - Contact Info */}
+    <div>
+      <h3 className="text-xl font-bold mb-4">Kontakt</h3>
+      <p className="mb-1">123-456-7890</p>
+      <p className="mb-6">info@skillsharehub.com</p>
+      
+      <div className="mt-6">
+        <h4 className="font-semibold mb-2">Nikoli ne zamudi predavanja.</h4>
+        <form className="flex flex-col space-y-2">
+          <input
+            type="email"
+            placeholder="Email *"
+            className="p-2 rounded bg-white text-black focus:outline-none focus:ring-2 focus:ring-orange-300"
+            required
+          />
+          <label className="flex items-center text-sm">
+            <input 
+              type="checkbox" 
+              className="mr-2 rounded text-orange-500 focus:ring-orange-300 bg-white" 
+            />
+            Da, želim prejemati obvestila.
+          </label>
+          <button 
+            type="submit"
+            className="bg-orange-300 text-black font-semibold px-4 py-2 rounded w-fit hover:bg-orange-400 transition-colors"
+          >
+            Naroči se
+          </button>
+        </form>
+      </div>
+    </div>
+
+    {/* Right Column - Contact Form */}
+    <div>
+      <h3 className="text-xl font-bold mb-4">Vprašaj nas karkoli</h3>
+      <form className="space-y-4">
+        <div className="grid grid-cols-2 gap-4">
+          <input
+            type="text"
+            placeholder="Ime *"
+            className="p-2 rounded bg-white text-black focus:outline-none focus:ring-2 focus:ring-orange-300"
+            required
+          />
+          <input
+            type="text"
+            placeholder="Priimek *"
+            className="p-2 rounded bg-white text-black focus:outline-none focus:ring-2 focus:ring-orange-300"
+            required
+          />
+        </div>
+        <input
+          type="email"
+          placeholder="Email *"
+          className="p-2 rounded w-full bg-white text-black focus:outline-none focus:ring-2 focus:ring-orange-300"
+          required
+        />
+        <input
+          type="text"
+          placeholder="Zadeva"
+          className="p-2 rounded w-full bg-white text-black focus:outline-none focus:ring-2 focus:ring-orange-300"
+        />
+        <textarea
+          placeholder="Sporočilo..."
+          className="p-2 rounded w-full h-24 bg-white text-black focus:outline-none focus:ring-2 focus:ring-orange-300"
+        ></textarea>
+        <button 
+          type="submit"
+          className="bg-orange-300 text-black font-semibold px-6 py-2 rounded hover:bg-orange-400 transition-colors"
+        >
+          Pošlji
+        </button>
+      </form>
+    </div>
+  </div>
+</section>
     </div>
   );
 }

@@ -8,6 +8,8 @@ import EventCard from './EventCard'
 import Navbar from './Navbar'
 import Hero from './Hero'
 import VideoPreview from './VideoPreview'
+import { useRouter } from 'next/navigation';
+
 
 // Define types based on your database schema
 type Uporabnik = {
@@ -41,6 +43,7 @@ type User = {
   email: string
 }
 
+
 export default function Home() {
   const [users, setUsers] = useState<Uporabnik[]>([])
   const [events, setEvents] = useState<HomeEvent[]>([])
@@ -49,7 +52,7 @@ export default function Home() {
   const [selectedPredmet, setSelectedPredmet] = useState<number | null>(null)
   const [loading, setLoading] = useState(true)
   const [currentWeekStart, setCurrentWeekStart] = useState<Date>(startOfWeek(new Date(), { weekStartsOn: 1 }))
-  
+    const router = useRouter();
   // User and events state
   const [user, setUser] = useState<User | null>(null)
   const [joinedEvents, setJoinedEvents] = useState<Set<number>>(new Set())
@@ -83,7 +86,7 @@ export default function Home() {
           }
         }
       }
-      
+
       // Fetch users
       const { data: userData, error: userError } = await supabase
         .from('Uporabniki')
@@ -140,7 +143,9 @@ export default function Home() {
 
     fetchData()
   }, [])
-
+     const handleLearnMore = () => {
+    router.push('/about');
+  };
   // Filter events when selected predmet changes or when week changes
   useEffect(() => {
     // Get the end date of the current displayed week (Sunday)
@@ -315,39 +320,41 @@ export default function Home() {
             const isWeekend = dayOfWeek === 0 || dayOfWeek === 6
 
             return (
-              <div key={format(day, 'yyyy-MM-dd')} className="flex flex-col min-w-48">
-                <h3 className={`font-bold text-lg text-center p-2 rounded-t-lg ${
-                  isToday ? 'bg-orange-300 text-black' :
-                  isWeekend ? 'bg-blue-200 text-gray-800' : 'bg-orange-200 text-gray-800'
-                }`}>
-                  {formatDateHeader(day)}
-                </h3>
-                  <div
-                    className={`flex-grow rounded-b-lg min-h-48 ${
-                      isWeekend ? 'bg-blue-50' : 'bg-orange-50'
-                    }`}
-                  >
-                    {dayEvents.length > 0 ? (
-                      <div className="p-2 space-y-2">
-                        {dayEvents.map((event) => (
-                          <EventCard
-                            key={event.id}
-                            event={event as any}
-                            user={user}
-                            isJoined={joinedEvents.has(event.id)}
-                            onJoinSuccess={handleJoinSuccess}
-                          />
-                        ))}
-                      </div>
-                    ) : (
-                      <div className="h-full flex items-center justify-center px-4 py-6">
-                        <p className="text-center text-gray-500 text-sm italic max-w-[90%]">
-                          🎉 Ta dan je prost – čas za počitek, kavo ali sprehod! ☕🌿
-                        </p>
-                      </div>
-                    )}
-                  </div>
-              </div>
+   <div key={format(day, 'yyyy-MM-dd')} className="flex flex-col min-w-48">
+  <h3 className={`font-bold text-lg text-center p-2 rounded-t-lg ${
+    isToday ? 'bg-orange-300 text-black' :
+    isWeekend ? 'bg-[#a0b4c8] text-gray-800' : 'bg-orange-200 text-gray-800'  // Soft blue-gray header
+  }`}>
+    {formatDateHeader(day)}
+  </h3>
+  <div
+    className={`flex-grow rounded-b-lg min-h-48 ${
+      isWeekend ? 'bg-[#d5e0eb]' : 'bg-orange-50'  // Very light blue-gray background
+    }`}
+  >
+    {dayEvents.length > 0 ? (
+      <div className="p-2 space-y-2">
+        {dayEvents.map((event) => (
+          <EventCard
+            key={event.id}
+            event={event as any}
+            user={user}
+            isJoined={joinedEvents.has(event.id)}
+            onJoinSuccess={handleJoinSuccess}
+          />
+        ))}
+      </div>
+    ) : (
+      <div className="h-full flex items-center justify-center px-4 py-6">
+        <p className={`text-center text-sm italic max-w-[90%] ${
+          isWeekend ? 'text-gray-600' : 'text-gray-500'  
+        }`}>
+          🎉 Ta dan je prost – čas za počitek, kavo ali sprehod! ☕🌳
+        </p>
+      </div>
+    )}
+  </div>
+</div>
             )
           })}
         </div>
@@ -367,76 +374,111 @@ export default function Home() {
     )}
   </div>
 </section>
+{/* O SKILLHUBU */}
+<section className="py-16 bg-white text-center relative">
+  <h2 className="text-3xl font-bold mb-4">O SkillHubu</h2>
+  <p className="max-w-3xl mx-auto text-gray-600 mb-8">
+    SkillHub je inovativna platforma, ki ti pomaga izboljšati študijske spretnosti in omogoča učenje skozi nove tehnike ter izmenjavo znanja znotraj študentske skupnosti.
+  </p>
+  <button 
+    onClick={handleLearnMore}
+    className="mt-4 bg-black text-white px-4 py-2 text-sm rounded hover:opacity-90 transition-opacity"
+  >
+    ➤ Preberi več
+  </button>
+</section>
 
-      {/* O SKILLHUBU */}
-      <section className="py-16 bg-white text-center">
-        <h2 className="text-3xl font-bold mb-4">O SkillHubu</h2>
-        <p className="max-w-3xl mx-auto text-gray-600 mb-8">
-          SkillHub je inovativna platforma, ki ti pomaga izboljšati študijske spretnosti in omogoča učenje skozi nove tehnike ter izmenjavo znanja znotraj študentske skupnosti.
-        </p>
-      </section>
 
-      {/* KONTAKTNA SEKCIJA */}
-      <section className="bg-indigo-900 text-white py-16">
-        <div className="max-w-6xl mx-auto px-4 grid md:grid-cols-2 gap-8">
-          <div>
-            <h3 className="text-xl font-bold mb-4">Kontakt</h3>
-            <p>123-456-7890</p>
-            <p>info@myhub.com</p>
-            <div className="mt-6">
-              <h4 className="font-semibold mb-2">Nikoli ne zamudi predavanja.</h4>
-              <form className="flex flex-col space-y-2">
-                <input
-                  type="email"
-                  placeholder="Email *"
-                  className="p-2 rounded text-black"
-                />
-                <label className="flex items-center text-sm">
-                  <input type="checkbox" className="mr-2" />
-                  Da, želim prejemati obvestila.
-                </label>
-                <button className="bg-orange-300 text-black font-semibold px-4 py-2 rounded w-fit hover:bg-orange-400">
-                  Naroči se
-                </button>
-              </form>
-            </div>
-          </div>
-          <div>
-            <h3 className="text-xl font-bold mb-4">Vprašaj nas karkoli</h3>
-            <form className="space-y-4">
-              <div className="grid grid-cols-2 gap-4">
-                <input
-                  type="text"
-                  placeholder="Ime *"
-                  className="p-2 rounded text-black"
-                />
-                <input
-                  type="text"
-                  placeholder="Priimek *"
-                  className="p-2 rounded text-black"
-                />
-              </div>
-              <input
-                type="email"
-                placeholder="Email *"
-                className="p-2 rounded w-full text-black"
-              />
-              <input
-                type="text"
-                placeholder="Zadeva"
-                className="p-2 rounded w-full text-black"
-              />
-              <textarea
-                placeholder="Sporočilo..."
-                className="p-2 rounded w-full h-24 text-black"
-              ></textarea>
-              <button className="bg-orange-300 text-black font-semibold px-6 py-2 rounded hover:bg-orange-400">
-                Pošlji
-              </button>
-            </form>
-          </div>
+{/* KONTAKTNA SEKCIJA */}
+ {/* Footer Bar */}
+  <div className="bg-[#2a2a2a] mt-12 py-4 px-4 flex items-center justify-between">
+    <img src="/logo.png" alt="Logo" className="h-15" />
+  </div>
+<section className="bg-[#1e1e1e] text-white pt-16 pb-8">
+  
+  <div className="max-w-6xl mx-auto px-4 grid md:grid-cols-2 gap-8">
+    {/* Left Column - Contact Info */}
+    <div>
+      <h3 className="text-xl font-bold mb-4">Kontakt</h3>
+      <p className="mb-1">123-456-7890</p>
+      <p className="mb-6">info@skillsharehub.com</p>
+      
+      <div className="mt-6">
+        <h4 className="font-semibold mb-2">Nikoli ne zamudi predavanja.</h4>
+        <form className="flex flex-col space-y-2">
+          <input
+            type="email"
+            placeholder="Email *"
+            className="p-2 rounded bg-white text-black focus:outline-none focus:ring-2 focus:ring-orange-300"
+            required
+          />
+          <label className="flex items-center text-sm">
+            <input 
+              type="checkbox" 
+              className="mr-2 rounded text-orange-500 focus:ring-orange-300 bg-white" 
+            />
+            Da, želim prejemati obvestila.
+          </label>
+          <button 
+            type="submit"
+            className="bg-orange-300 text-black font-semibold px-4 py-2 rounded w-fit hover:bg-orange-400 transition-colors"
+          >
+            Naroči se
+          </button>
+        </form>
+      </div>
+    </div>
+
+    {/* Right Column - Contact Form */}
+    <div>
+      <h3 className="text-xl font-bold mb-4">Vprašaj nas karkoli</h3>
+      <form className="space-y-4">
+        <div className="grid grid-cols-2 gap-4">
+          <input
+            type="text"
+            placeholder="Ime *"
+            className="p-2 rounded bg-white text-black focus:outline-none focus:ring-2 focus:ring-orange-300"
+            required
+          />
+          <input
+            type="text"
+            placeholder="Priimek *"
+            className="p-2 rounded bg-white text-black focus:outline-none focus:ring-2 focus:ring-orange-300"
+            required
+          />
         </div>
-      </section>
+        <input
+          type="email"
+          placeholder="Email *"
+          className="p-2 rounded w-full bg-white text-black focus:outline-none focus:ring-2 focus:ring-orange-300"
+          required
+        />
+        <input
+          type="text"
+          placeholder="Zadeva"
+          className="p-2 rounded w-full bg-white text-black focus:outline-none focus:ring-2 focus:ring-orange-300"
+        />
+        <textarea
+          placeholder="Sporočilo..."
+          className="p-2 rounded w-full h-24 bg-white text-black focus:outline-none focus:ring-2 focus:ring-orange-300"
+        ></textarea>
+        <button 
+          type="submit"
+          className="bg-orange-300 text-black font-semibold px-6 py-2 rounded hover:bg-orange-400 transition-colors"
+        >
+          Pošlji
+        </button>
+      </form>
+    </div>
+  </div>
+  <div className=" mt-12 py-4 px-4 flex flex-col items-center justify-center text-center">
+  <p className="text-sm text-gray-400">
+    &copy; {new Date().getFullYear()} SkillShareHub. Vse pravice pridržane.
+  </p>
+</div>
+</section>
+
+
     </main>
   )
 }

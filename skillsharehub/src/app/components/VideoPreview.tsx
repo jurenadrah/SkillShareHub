@@ -33,7 +33,7 @@ export default function VideoPreview({ title, duration, imageUrl }: Props) {
         onClick={handleLearnMore}
         className="absolute bottom-2 left-2 bg-white text-black px-3 py-1 text-sm rounded opacity-90 group-hover:opacity-100 transition-opacity"
       >
-        ➤ Preberi več
+        ➤ Preberi več o skillsharehub-u
       </button>
     </div>
   );

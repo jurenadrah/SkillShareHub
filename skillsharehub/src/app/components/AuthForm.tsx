@@ -47,7 +47,6 @@ export default function AuthForm() {
       return;
     }
 
-    // Insert into 'Uporabniki' with tutor: false by default
     const { error: dbError } = await supabase
       .from('Uporabniki')
       .insert([{ email, ime, priimek, tutor: false }]);
@@ -91,83 +90,124 @@ export default function AuthForm() {
   };
 
   return (
-    <div className="max-w-md w-full mx-auto bg-white rounded shadow p-6 mt-8">
+    <div className="w-full max-w-2xl mx-auto bg-white rounded-xl shadow-2xl p-10">
+      {/* Logo and Header */}
+      <div className="flex flex-row items-center mb-8 gap-4">
+        <div className="w-24 h-24 relative">
+          <img
+            src="/logo.png"
+            alt="SkillShareHub Logo"
+            className="h-full w-auto"
+          />
+        </div>
+        <h2 className="text-3xl font-bold text-gray-800">
+          {mode === 'login' ? 'Prijava' : 'Registracija'}
+        </h2>
+      </div>
+
       {user ? (
-        <div className="flex flex-col items-center gap-3">
-          <span className="text-green-600 font-bold">Prijavljen kot {user.email}</span>
+        <div className="flex flex-col items-center gap-6">
+          <span className="text-green-600 font-bold text-xl">Prijavljen kot {user.email}</span>
           <button
             onClick={signOut}
-            className="bg-orange-200 rounded px-4 py-2 hover:bg-orange-300"
+            className="bg-orange-400 text-black font-bold text-lg rounded-xl px-8 py-3 hover:bg-orange-500 transition-colors shadow-lg"
           >
             Odjava
           </button>
         </div>
       ) : (
         <>
-          <div className="flex justify-center mb-4">
-            <button
-              onClick={() => setMode(mode === 'login' ? 'signup' : 'login')}
-              className="text-sm underline text-indigo-600"
-            >
-              {mode === 'login' ? 'Nimaš računa? Registriraj se' : 'Imaš račun? Prijava'}
-            </button>
-          </div>
           <form
             onSubmit={mode === 'login' ? handleLogIn : handleSignUp}
-            className="space-y-3"
+            className="space-y-6"
           >
             {mode === 'signup' && (
               <>
-                <input
-                  type="text"
-                  placeholder="Ime"
-                  value={ime}
-                  onChange={e => setIme(e.target.value)}
-                  className="w-full p-2 border rounded"
-                  required
-                />
-                <input
-                  type="text"
-                  placeholder="Priimek"
-                  value={priimek}
-                  onChange={e => setPriimek(e.target.value)}
-                  className="w-full p-2 border rounded"
-                  required
-                />
+                <div className="space-y-2">
+                  <label className="block text-gray-700 text-lg">Ime</label>
+                  <input
+                    type="text"
+                    placeholder="Vnesite svoje ime"
+                    value={ime}
+                    onChange={e => setIme(e.target.value)}
+                    className="w-full p-3 text-black text-lg border-2 border-gray-300 rounded-xl focus:ring-4 focus:ring-orange-200 focus:border-orange-400"
+                    required
+                  />
+                </div>
+                <div className="space-y-2">
+                  <label className="block text-gray-700 text-lg">Priimek</label>
+                  <input
+                    type="text"
+                    placeholder="Vnesite svoj priimek"
+                    value={priimek}
+                    onChange={e => setPriimek(e.target.value)}
+                    className="w-full p-3 text-black text-lg border-2 border-gray-300 rounded-xl focus:ring-4 focus:ring-orange-200 focus:border-orange-400"
+                    required
+                  />
+                </div>
               </>
             )}
-            <input
-              type="email"
-              placeholder="Email"
-              value={email}
-              onChange={e => setEmail(e.target.value)}
-              className="w-full p-2 border rounded"
-              required
-            />
-            <input
-              type="password"
-              placeholder="Geslo"
-              value={password}
-              onChange={e => setPassword(e.target.value)}
-              className="w-full p-2 border rounded"
-              required
-            />
-            <button
-              type="submit"
-              className="w-full bg-indigo-500 text-white py-2 rounded hover:bg-indigo-600"
-              disabled={loading}
-            >
-              {loading
-                ? mode === 'login'
-                  ? 'Prijavljam...'
-                  : 'Registriram...'
-                : mode === 'login'
-                ? 'Prijava'
-                : 'Registracija'}
-            </button>
-            {error && <div className="text-red-500 text-sm">{error}</div>}
-            {success && <div className="text-green-600 text-sm">{success}</div>}
+            <div className="space-y-2">
+              <label className="block text-gray-700 text-lg">Email</label>
+              <input
+                type="email"
+                placeholder="Vnesite svoj email"
+                value={email}
+                onChange={e => setEmail(e.target.value)}
+                className="w-full p-3 text-black text-lg border-2 border-gray-300 rounded-xl focus:ring-4 focus:ring-orange-200 focus:border-orange-400"
+                required
+              />
+            </div>
+            <div className="space-y-2">
+              <label className="block text-gray-700 text-lg">Geslo</label>
+              <input
+                type="password"
+                placeholder="Vnesite svoje geslo"
+                value={password}
+                onChange={e => setPassword(e.target.value)}
+                className="w-full p-3 text-black text-lg border-2 border-gray-300 rounded-xl focus:ring-4 focus:ring-orange-200 focus:border-orange-400"
+                required
+              />
+            </div>
+
+            <div className="pt-4">
+              <button
+                type="submit"
+                className="w-full bg-orange-400 text-black font-bold text-xl py-4 rounded-xl hover:bg-orange-500 transition-colors shadow-lg"
+                disabled={loading}
+              >
+                {loading
+                  ? mode === 'login'
+                    ? 'Prijavljam...'
+                    : 'Registriram...'
+                  : mode === 'login'
+                  ? 'Prijava'
+                  : 'Registracija'}
+              </button>
+            </div>
           </form>
+
+          <div className="mt-6 text-center">
+            <button
+              onClick={() => setMode(mode === 'login' ? 'signup' : 'login')}
+              className="text-lg text-orange-500 hover:text-orange-600 font-medium underline"
+            >
+              {mode === 'login'
+                ? 'Nimaš računa? Registriraj se'
+                : 'Imaš račun? Prijavi se'}
+            </button>
+          </div>
+
+          {error && (
+            <div className="mt-6 p-4 bg-red-100 border-l-4 border-red-500 text-red-700 text-lg">
+              {error}
+            </div>
+          )}
+          {success && (
+            <div className="mt-6 p-4 bg-green-100 border-l-4 border-green-500 text-green-700 text-lg">
+              {success}
+            </div>
+          )}
         </>
       )}
     </div>

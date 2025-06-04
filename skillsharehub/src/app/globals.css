@@ -19,7 +19,7 @@
 @media (prefers-color-scheme: dark) {
   :root {
     --background: #ffffff;
-    --foreground: #561e1e; /* Kontrastna svetla barva za temni način */
+    --foreground: #7f3b00; /* Kontrastna svetla barva za temni način */
   }
 }
 
@@ -30,7 +30,7 @@ body {
 }
 /* Add this to your CSS file */
 nav {
-  background-color: #000000; /* Black background */
+  background-color: #1e1e1e; /* Black background */
   color: #ffffff; /* White text */
   font-family: 'Arial', sans-serif;
   font-weight: bold;
@@ -56,7 +56,7 @@ nav button.text-xl {
 
 /* Style for auth buttons */
 nav button.bg-indigo-500 {
-  background-color: #ff7700 !important; /* Red instead of indigo */
+  background-color: #ff9d47 !important; /* Red instead of indigo */
 }
 
 nav button.bg-indigo-500:hover {

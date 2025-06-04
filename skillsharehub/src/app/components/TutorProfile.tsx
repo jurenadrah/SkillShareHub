@@ -634,11 +634,33 @@ const handleBannerUpload = async (e: React.ChangeEvent<HTMLInputElement>, banner
               </div>
             </>
           ) : (
-            <>
-              <p><strong>Email:</strong> {email}</p>
-              <p><strong>Bio:</strong> {bio || 'Ni opisa.'}</p>
-              <p><strong>Zoom:</strong> {zoomLink ? <a href={zoomLink} target="_blank" rel="noopener noreferrer">{zoomLink}</a> : 'Ni povezave'}</p>
-            </>
+<>
+  <p>
+    <strong>Email:</strong>{' '}
+    <a 
+      href={`mailto:${email}`}
+      className="text-blue-600 hover:text-blue-800 underline hover:no-underline transition-colors duration-200 cursor-pointer"
+    >
+      {email}
+    </a>
+  </p>
+  <p><strong>Bio:</strong> {bio || 'Ni opisa.'}</p>
+  <p>
+    <strong>Zoom:</strong>{' '}
+    {zoomLink ? (
+      <a 
+        href={zoomLink} 
+        target="_blank" 
+        rel="noopener noreferrer"
+        className="text-blue-600 hover:text-blue-800 underline hover:no-underline transition-colors duration-200 cursor-pointer"
+      >
+        {zoomLink}
+      </a>
+    ) : (
+      'Ni povezave'
+    )}
+  </p>
+</>
           )}
 
           <div className="mt-4">

@@ -1,12 +1,12 @@
 @import "tailwindcss";
 
 :root {
-  --background: #d8cfc6; /* BEIGE ozadje */
-  --foreground: #cec9bc;
+  --background: #ffffff; /* BEIGE ozadje */
+  --foreground: #ffffff;
 
   /* Dodatne barvne spremenljivke, če jih želiš uporabljati globalno */
-  --beige: #e6dccb;
-  --dark-text: #efe6bd;
+  --beige: #ffffff;
+  --dark-text: #ffffff;
 }
 
 @theme inline {
@@ -18,7 +18,7 @@
 
 @media (prefers-color-scheme: dark) {
   :root {
-    --background: #e0d9c7;
+    --background: #ffffff;
     --foreground: #561e1e; /* Kontrastna svetla barva za temni način */
   }
 }
@@ -27,4 +27,84 @@ body {
   background: var(--background);
   color: var(--foreground);
   font-family: Arial, Helvetica, sans-serif;
+}
+/* Add this to your CSS file */
+nav {
+  background-color: #000000; /* Black background */
+  color: #ffffff; /* White text */
+  font-family: 'Arial', sans-serif;
+  font-weight: bold;
+  text-transform: uppercase;
+  letter-spacing: 1px;
+}
+
+nav button, nav a {
+  color: #ffffff; /* White text for buttons and links */
+  transition: color 0.2s ease;
+}
+
+nav button:hover, nav a:hover {
+  color: #ff7700; /* Red on hover */
+  text-decoration: none; /* Remove underline */
+}
+
+/* Style for the main "SkillShareHub" button */
+nav button.text-xl {
+  font-size: 1.25rem;
+  padding: 0.5rem 1rem;
+}
+
+/* Style for auth buttons */
+nav button.bg-indigo-500 {
+  background-color: #ff7700 !important; /* Red instead of indigo */
+}
+
+nav button.bg-indigo-500:hover {
+  background-color: #ff7700 !important; /* Darker red on hover */
+}
+
+nav button.bg-orange-200 {
+  background-color: #ff7700 !important; /* Red instead of orange */
+  color: white !important;
+}
+
+nav button.bg-orange-200:hover {
+  background-color: #ff7700 !important; /* Darker red on hover */
+}
+
+/* Disabled state styling */
+nav span.text-gray-400 {
+  color: #555555 !important; /* Dark gray for disabled items */
+}
+
+/* Notification icons */
+nav div.flex.space-x-4 span {
+  color: #ffffff;
+  transition: color 0.2s ease;
+}
+
+nav div.flex.space-x-4 span:hover {
+  color: #ff7700;
+}
+
+/* Modal styling */
+.backdrop-blur-sm {
+  background-color: rgba(0, 0, 0, 0.8) !important;
+}
+
+.bg-white.rounded.shadow-lg {
+  background-color: #222222 !important;
+  color: white;
+}
+
+/* Responsive adjustments */
+@media (max-width: 768px) {
+  nav {
+    flex-direction: column;
+    padding: 1rem;
+  }
+  
+  nav > div {
+    margin: 0.5rem 0;
+  }
 }

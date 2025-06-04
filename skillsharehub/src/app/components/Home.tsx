@@ -199,19 +199,31 @@ export default function Home() {
 
   return (
     <main className="bg-[#fefefe]">
-      
-      <div className="bg-orange-200 text-center py-3 font-semibold text-xl">
-        Dobrodošli na SkillShareHub
-      </div>
       <Hero />
 
-      {/* VIDEO SEKCIJA */}
-      <section className="grid grid-cols-1 md:grid-cols-4 gap-4 p-6">
-        <VideoPreview title="Online Classes from Anywhere" duration="00:32" />
-        <VideoPreview title="Class Title" duration="00:31" />
-        <VideoPreview title="Class Title" duration="00:29" />
-        <VideoPreview title="Class Title" duration="00:23" />
-      </section>
+ {/* VIDEO SEKCIJA */}
+<section className="grid grid-cols-1 md:grid-cols-4 gap-4 p-6">
+  <VideoPreview 
+    title="Online Classes from Anywhere" 
+    duration="00:32" 
+    imageUrl="/slika1.jpg" 
+  />
+  <VideoPreview 
+    title="Creative Workshop" 
+    duration="00:31" 
+   imageUrl="/slika2.jpeg" 
+  />
+  <VideoPreview 
+    title="Coding Tutorial" 
+    duration="00:29" 
+ imageUrl="/slika3.webp" 
+  />
+  <VideoPreview 
+    title="Design Masterclass" 
+    duration="00:23" 
+   imageUrl="/slika4.jpg" 
+  />
+</section>
 
 {/* URNIK */}
 <section className="py-12 bg-gray-50 border-2 border-gray-200 mx-4 rounded-lg shadow-md">

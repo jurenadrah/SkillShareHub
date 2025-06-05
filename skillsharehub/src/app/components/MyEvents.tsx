@@ -39,6 +39,7 @@ export default function MyEvents({ userEvents, onEventRemoved, hasGoogleConnecte
   const [messages, setMessages] = useState(new Map<number, { type: 'success' | 'error' | 'info', text: string }>())
   const [eventDetails, setEventDetails] = useState(new Map<number, any>())
   const [currentTime, setCurrentTime] = useState(new Date())
+  const [userPoints, setUserPoints] = useState<number | null>(null)
 
   // Modal state
   const [modalEvent, setModalEvent] = useState<UserEvent | null>(null)
@@ -49,6 +50,45 @@ export default function MyEvents({ userEvents, onEventRemoved, hasGoogleConnecte
       setCurrentTime(new Date())
     }, 30000)
     return () => clearInterval(timer)
+  }, [])
+
+  // Helperji za marker "že plačano"
+  const checkIfAlreadyPaid = (userId: number, eventId: number) => {
+    const key = `event_paid_${userId}_${eventId}`
+    return typeof window !== 'undefined' && localStorage.getItem(key) === 'true'
+  }
+  const setAlreadyPaid = (userId: number, eventId: number) => {
+    const key = `event_paid_${userId}_${eventId}`
+    typeof window !== 'undefined' && localStorage.setItem(key, 'true')
+  }
+  const clearAlreadyPaid = (userId: number, eventId: number) => {
+    const key = `event_paid_${userId}_${eventId}`
+    typeof window !== 'undefined' && localStorage.removeItem(key)
+  }
+  
+
+  // Fetch user points
+  useEffect(() => {
+    const fetchUserPoints = async () => {
+      try {
+        const { data: { user } } = await supabase.auth.getUser()
+        if (!user) return
+
+        const { data, error } = await supabase
+          .from('Uporabniki')
+          .select('tocke')
+          .eq('id', user.id)
+          .single()
+        
+        if (!error && data) {
+          setUserPoints(data.tocke)
+        }
+      } catch (error) {
+        console.error('Error fetching user points:', error)
+      }
+    }
+
+    fetchUserPoints()
   }, [])
 
   // Fetch detailed event information for each event
@@ -97,12 +137,42 @@ export default function MyEvents({ userEvents, onEventRemoved, hasGoogleConnecte
     }
   }, [modalEvent])
 
+  // Check if event has ended
+  const hasEventEnded = (endDateTime: string) => {
+    const eventEnd = new Date(endDateTime)
+    return currentTime > eventEnd
+  }
+
+  // Check if event has started
+  const hasEventStarted = (startDateTime: string) => {
+    const eventStart = new Date(startDateTime)
+    return currentTime >= eventStart
+  }
+
+  // Get event status
+  const getEventStatus = (startDateTime: string, endDateTime: string) => {
+    if (hasEventEnded(endDateTime)) {
+      return { status: 'ended', text: 'Končan', color: 'bg-gray-100 text-gray-800' }
+    }
+    if (hasEventStarted(startDateTime)) {
+      return { status: 'ongoing', text: 'V teku', color: 'bg-yellow-100 text-yellow-800' }
+    }
+    return { status: 'upcoming', text: 'Prihajajoči', color: 'bg-blue-100 text-blue-800' }
+  }
+
   // Check if meeting button should be shown (15 minutes before start time until event ends)
   const shouldShowMeetingButton = (startDateTime: string, endDateTime: string) => {
     const eventStart = new Date(startDateTime)
     const eventEnd = new Date(endDateTime)
     const fifteenMinutesBefore = new Date(eventStart.getTime() - 15 * 60 * 1000)
     return currentTime >= fifteenMinutesBefore && currentTime <= eventEnd
+  }
+
+  // Check if points can be refunded (more than 15 minutes before event start)
+  const canRefundPoints = (startDateTime: string) => {
+    const eventStart = new Date(startDateTime)
+    const fifteenMinutesBefore = new Date(eventStart.getTime() - 15 * 60 * 1000)
+    return currentTime < fifteenMinutesBefore
   }
 
   // Get zoom link for the event
@@ -153,6 +223,34 @@ export default function MyEvents({ userEvents, onEventRemoved, hasGoogleConnecte
     }
   }
 
+  // Refund points to user
+const refundPoints = async (userId: number, points: number = 5): Promise<boolean> => {
+  try {
+    // Fetch current points
+    const { data: currentUser, error: fetchError } = await supabase
+      .from('Uporabniki')
+      .select('tocke')
+      .eq('id', userId)
+      .single();
+
+    if (fetchError) throw fetchError;
+
+    const newPoints = (currentUser.tocke || 0) + points;
+
+    const { error: updateError } = await supabase
+      .from('Uporabniki')
+      .update({ tocke: newPoints })
+      .eq('id', userId);
+
+    if (updateError) throw updateError;
+
+    setUserPoints(newPoints); // Optional: update local state
+    return true;
+  } catch (error) {
+    console.error('Error refunding points:', error);
+    return false;
+  }
+};
   const setMessage = (userEventId: number, message: { type: 'success' | 'error' | 'info', text: string } | null) => {
     setMessages(prev => {
       const newMessages = new Map(prev)
@@ -174,11 +272,28 @@ export default function MyEvents({ userEvents, onEventRemoved, hasGoogleConnecte
     }
   }
 
-  const handleLeaveEvent = async (userEventId: number, eventId: number, googleEventId: string | null) => {
-    if (leavingEvents.has(userEventId)) return
-    setLeavingEvents(prev => new Set([...prev, userEventId]))
-    setMessage(userEventId, null)
-    try {
+const handleLeaveEvent = async (userEventId: number, eventId: number, googleEventId: string | null, startDateTime: string) => {
+  if (leavingEvents.has(userEventId)) return;
+  setLeavingEvents(prev => new Set([...prev, userEventId]));
+  setMessage(userEventId, null);
+
+  try {
+    // 1. Get the currently authenticated user
+    const { data: { user: authUser } } = await supabase.auth.getUser();
+    if (!authUser) throw new Error('User not found');
+
+    // 2. Get the numeric user id from your Uporabniki table using the email
+    const { data: dbUser, error: userError } = await supabase
+      .from('Uporabniki')
+      .select('id, tocke')
+      .eq('email', authUser.email)
+      .single();
+
+    if (userError || !dbUser) throw new Error('DB user not found');
+    const userId = dbUser.id; // This is the int8 database id
+
+    const canRefund = canRefundPoints(startDateTime);
+      
       let googleRemovalSuccess = true
       let googleRemovalMessage = ''
       if (googleEventId && hasGoogleConnected) {
@@ -211,44 +326,74 @@ export default function MyEvents({ userEvents, onEventRemoved, hasGoogleConnecte
           }
         }
       }
-      const { error } = await supabase
-        .from('UserEvents')
-        .delete()
-        .eq('id', userEventId)
-      if (error) throw error
-      onEventRemoved(userEventId)
+
+
+    // 3. Remove from UserEvents
+    const { error } = await supabase
+      .from('UserEvents')
+      .delete()
+      .eq('id', userEventId);
+    if (error) throw error;
+
+    const status = getEventStatus(startDateTime, userEvents.find(ev => ev.id === userEventId)?.event.end_date_time || '')
+    if (status.status === 'ongoing') {
+      // Če je še v teku, pusti marker!
+      setAlreadyPaid(userId, eventId)
+    } else {
+      // Če ni več v teku, odstrani marker (ni več relevantno)
+      clearAlreadyPaid(userId, eventId)
+    }
+
+    // 4. Refund points if eligible
+    let pointsMessage = '';
+    if (canRefund) {
+      const pointsRefunded = await refundPoints(userId, 5);
+      pointsMessage = pointsRefunded ? ' (+5 točk)' : ' (napaka pri vračanju točk)';
+    } else {
+      pointsMessage = ' (brez vračila točk - prepozno)';
+    }
+
+    onEventRemoved(userEventId);
+
+    setMessage(userEventId, {
+      type: 'success',
+      text: `Dogodek uspešno odstranjen iz osebnega koledarja${pointsMessage}`
+    });
+
+    
+
       if (googleEventId && hasGoogleConnected) {
         if (googleRemovalSuccess) {
           setMessage(userEventId, {
             type: 'success',
-            text: 'Dogodek uspešno odstranjen iz osebnega in Google koledarja'
+            text: `Dogodek uspešno odstranjen iz osebnega in Google koledarja${pointsMessage}`
           })
         } else {
           setMessage(userEventId, {
             type: 'info',
-            text: `Dogodek odstranjen iz osebnega koledarja. ${googleRemovalMessage}`
+            text: `Dogodek odstranjen iz osebnega koledarja. ${googleRemovalMessage}${pointsMessage}`
           })
         }
       } else {
         setMessage(userEventId, {
           type: 'success',
-          text: 'Dogodek uspešno odstranjen iz osebnega koledarja'
+          text: `Dogodek uspešno odstranjen iz osebnega koledarja${pointsMessage}`
         })
       }
-    } catch (error) {
-      console.error('Error leaving event:', error)
-      setMessage(userEventId, {
-        type: 'error',
-        text: 'Napaka pri odstranitvi dogodka'
-      })
-    } finally {
-      setLeavingEvents(prev => {
-        const newSet = new Set(prev)
-        newSet.delete(userEventId)
-        return newSet
-      })
-    }
+  } catch (error) {
+    console.error('Error leaving event:', error);
+    setMessage(userEventId, {
+      type: 'error',
+      text: 'Napaka pri odstranitvi dogodka'
+    });
+  } finally {
+    setLeavingEvents(prev => {
+      const newSet = new Set(prev);
+      newSet.delete(userEventId);
+      return newSet;
+    });
   }
+};
 
   const formatEventDateTime = (startDateTime: string, endDateTime: string) => {
     const start = new Date(startDateTime)
@@ -302,6 +447,18 @@ export default function MyEvents({ userEvents, onEventRemoved, hasGoogleConnecte
 
   return (
     <>
+      {/* User Points Display */}
+      {userPoints !== null && (
+        <div className="mb-4 p-3 bg-blue-50 border border-blue-200 rounded-lg">
+          <div className="flex items-center">
+            <svg className="w-5 h-5 text-blue-500 mr-2" fill="currentColor" viewBox="0 0 20 20">
+              <path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z" />
+            </svg>
+            <span className="text-blue-700 font-medium">Vaše točke: {userPoints}</span>
+          </div>
+        </div>
+      )}
+
       {/* Modal with Framer Motion */}
       <AnimatePresence>
         {modalEvent && (
@@ -340,6 +497,19 @@ export default function MyEvents({ userEvents, onEventRemoved, hasGoogleConnecte
               {/* Modal Content */}
               <div className="p-6 overflow-auto max-h-[calc(80vh-80px)]">
                 <div className="space-y-4">
+                  {/* Status */}
+                  <div>
+                    <h4 className="font-semibold text-gray-700 mb-1">Status:</h4>
+                    {(() => {
+                      const status = getEventStatus(modalEvent.event.start_date_time, modalEvent.event.end_date_time)
+                      return (
+                        <span className={`inline-block px-3 py-1 rounded-full text-sm ${status.color}`}>
+                          {status.text}
+                        </span>
+                      )
+                    })()}
+                  </div>
+
                   {/* Title */}
                   <div>
                     <h4 className="font-semibold text-gray-700 mb-1">Naslov:</h4>
@@ -388,6 +558,20 @@ export default function MyEvents({ userEvents, onEventRemoved, hasGoogleConnecte
                       </span>
                     </div>
                   )}
+
+                  {/* Points Refund Info */}
+                  <div>
+                    <h4 className="font-semibold text-gray-700 mb-1">Vračilo točk:</h4>
+                    {canRefundPoints(modalEvent.event.start_date_time) ? (
+                      <span className="inline-block bg-green-100 text-green-800 px-3 py-1 rounded-full text-sm">
+                        Možno (+5 točk)
+                      </span>
+                    ) : (
+                      <span className="inline-block bg-red-100 text-red-800 px-3 py-1 rounded-full text-sm">
+                        Ni možno (prepozno)
+                      </span>
+                    )}
+                  </div>
                   
                   {/* Meeting Button */}
                   {(() => {
@@ -453,18 +637,27 @@ export default function MyEvents({ userEvents, onEventRemoved, hasGoogleConnecte
             userEvent.event.start_date_time,
             userEvent.event.end_date_time
           )
+          const canRefund = canRefundPoints(userEvent.event.start_date_time)
+          const eventStatus = getEventStatus(userEvent.event.start_date_time, userEvent.event.end_date_time)
 
           return (
             <div
               key={userEvent.id}
-              className="border border-gray-200 rounded-lg p-4 hover:shadow-md transition-shadow cursor-pointer"
+              className={`border border-gray-200 rounded-lg p-4 hover:shadow-md transition-shadow cursor-pointer ${
+                hasEventEnded(userEvent.event.end_date_time) ? 'opacity-75' : ''
+              }`}
               onClick={() => setModalEvent(userEvent)}
             >
               <div className="flex justify-between items-start">
                 <div className="flex-1">
-                  <h3 className="font-semibold text-gray-900 mb-1 cursor-pointer hover:text-orange-600 hover:underline transition-colors duration-200 select-none">
-                    {userEvent.event.title}
-                  </h3>
+                  <div className="flex justify-between items-start mb-2">
+                    <h3 className="font-semibold text-gray-900 mb-1 cursor-pointer hover:text-orange-600 hover:underline transition-colors duration-200 select-none flex-1">
+                      {userEvent.event.title}
+                    </h3>
+                    <span className={`inline-flex items-center px-2 py-1 rounded-full text-xs ml-2 ${eventStatus.color}`}>
+                      {eventStatus.text}
+                    </span>
+                  </div>
                  
                   <p className="text-sm italic text-gray-700 mb-2">
                     <strong>Predavatelj: </strong>
@@ -486,6 +679,26 @@ export default function MyEvents({ userEvents, onEventRemoved, hasGoogleConnecte
                     <p>{dateStr}</p>
                     <p>{timeStr}</p>
                   </div>
+                  
+                  {/* Points refund indicator */}
+                  <div className="mt-2">
+                    {canRefund ? (
+                      <span className="inline-flex items-center px-2 py-1 rounded-full text-xs bg-green-100 text-green-800">
+                        <svg className="w-3 h-3 mr-1" fill="currentColor" viewBox="0 0 20 20">
+                          <path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd" />
+                        </svg>
+                        Vračilo točk možno
+                      </span>
+                    ) : (
+                      <span className="inline-flex items-center px-2 py-1 rounded-full text-xs bg-red-100 text-red-800">
+                        <svg className="w-3 h-3 mr-1" fill="currentColor" viewBox="0 0 20 20">
+                          <path fillRule="evenodd" d="M4.293 4.293a1 1 0 011.414 0L10 8.586l4.293-4.293a1 1 0 111.414 1.414L11.414 10l4.293 4.293a1 1 0 01-1.414 1.414L10 11.414l-4.293 4.293a1 1 0 01-1.414-1.414L8.586 10 4.293 5.707a1 1 0 010-1.414z" clipRule="evenodd" />
+                        </svg>
+                        Brez vračila točk
+                      </span>
+                    )}
+                  </div>
+
                   {showMeetingButton && zoomLink && (
                     <div className="mt-3">
                       <a
@@ -534,7 +747,8 @@ export default function MyEvents({ userEvents, onEventRemoved, hasGoogleConnecte
                     handleLeaveEvent(
                       userEvent.id,
                       userEvent.event.id,
-                      userEvent.google_calendar_event_id
+                      userEvent.google_calendar_event_id,
+                      userEvent.event.start_date_time
                     )
                   }}
                   disabled={isLeaving}
@@ -543,6 +757,7 @@ export default function MyEvents({ userEvents, onEventRemoved, hasGoogleConnecte
                       ? 'bg-gray-100 text-gray-500 cursor-not-allowed'
                       : 'bg-red-100 text-red-700 hover:bg-red-200'
                   }`}
+                  title={canRefund ? 'Odstrani in dobi 5 točk nazaj' : 'Odstrani (brez vračila točk)'}
                 >
                   {isLeaving ? (
                     <div className="flex items-center">

@@ -2,7 +2,23 @@
 
 **Spletna platforma za izmenjavo veščin — učiš, da se učiš.**
 
-SkillShareHub je platforma, ki povezuje posameznike, ki želijo deliti in graditi znanja. Uporabniki lahko ponudijo učenje ene veščine v zameno za drugo, pri tem pa uporabljajo integriran sistem terminov, video klicev in točk, ki zagotavlja pravično izmenjavo.
+SkillShareHub je platforma, kjer lahko vsakdo deli in pridobiva nova znanja na enakopraven, preprost in motivirajoč način. Verjamemo, da ima vsak posameznik uporabno veščino, ki jo lahko deli z drugimi – zato gradimo most med ljudmi, ki želijo učiti in ljudmi, ki želijo napredovati.
+
+
+<p align="center">
+  <a href="https://google.com" target="_blank">
+    <img src="https://img.shields.io/badge/🌍 Obišči%20SkillShareHub%20spletno%20stran%20-%20KLIKNI%20TUKAJ-blue?style=for-the-badge&logo=google-chrome" alt="Obišči spletno stran SkillShareHub" />
+  </a>
+</p>
+
+---
+
+
+## 🧠 Komu je namenjeno?
+
+- 🎓 Študentom
+- 📚 Samoukom
+- 🧑‍💻 Posameznikom, ki želijo brezplačno nadgraditi svoje veščine
 
 ---
 
@@ -17,11 +33,29 @@ SkillShareHub je platforma, ki povezuje posameznike, ki želijo deliti in gradit
 
 ---
 
-## 🧠 Komu je namenjeno?
+## 🧩 Kako deluje sistem izmenjave veščin?
 
-- 🎓 Študentom
-- 📚 Samoukom
-- 🧑‍💻 Posameznikom, ki želijo brezplačno nadgraditi svoje veščine
+### 1. 🔐 Uporabniški profil
+
+* Navedi veščine, ki jih ponujaš
+* Napiši nekaj o sebi 🙂
+
+### 2. 📅 Seje izmenjave
+
+* Predlagaj in sprejmi termine
+* Video srečanja preko Zooma
+* Beleženje sejn in napredka
+
+### 3. ⚖️ Sistem točk
+
+* Poučevanje → zaslužiš točke
+* Učenje → porabiš točke
+* Uravnotežena in poštena izmenjava
+
+### 4. ⭐ Ocenjevanje in napredek
+
+* Ocenjevanje po seji
+* Sledenje napredku in povratnim informacijam
 
 ---
 
@@ -38,27 +72,42 @@ SkillShareHub je platforma, ki povezuje posameznike, ki želijo deliti in gradit
 ---
 
 ## ⚙️ Vzpostavitev razvojnega okolja
+1. **Namesti Node.js in npm**
+   - Obišči [https://nodejs.org/](https://nodejs.org/) in prenesi  različico za svoj operacijski sistem.
+   - **Priporočena verzija**: Node.js v24.0.2, npm 11.3.0
+   - Po namestitvi preveri, če sta Node.js in npm uspešno nameščena:
+     ```bash
+     node -v
+     npm -v
+     ```
 
-1. **Kloniraj repozitorij**
+2. **Namesti Git**
+   - Prenesi in namesti Git z [https://git-scm.com/downloads](https://git-scm.com/downloads).
+   - Preveri namestitev:
+     ```bash
+     git --version
+     ```
+
+3. **Kloniraj repozitorij**
    ```bash
    git clone https://github.com/your-username/skillsharehub.git
    cd skillsharehub
     ````
 
-2. **Namesti odvisnosti**
+4. **Namesti odvisnosti**
 
    ```bash
    npm install
    ```
 
-3. **Konfiguriraj okolje**
+5. **Konfiguriraj okolje**
    Ustvari `.env.local` datoteko in dodaj naslednje vrednosti:
 
    ```env
    NEXT_PUBLIC_SUPABASE_URL=your_supabase_url
    NEXT_PUBLIC_SUPABASE_ANON_KEY=your_supabase_anon_key
-   ZOOM_API_KEY=your_zoom_api_key
-   ZOOM_API_SECRET=your_zoom_api_secret
+   GOOGLE_CLIENT_ID=your_google_client_id
+   GOOGLE_CLIENT_SECRET=your_google_client_secret
    ```
 
 ---
@@ -75,37 +124,6 @@ Aplikacija bo dostopna na [http://localhost:3000](http://localhost:3000)
 
 ---
 
-## 🧩 Kako deluje sistem izmenjave veščin?
-
-### 1. 🔐 Uporabniški profil
-
-* Navedi veščine, ki jih ponujaš
-* Navedi veščine, ki se jih želiš naučiti
-* Določi časovno razpoložljivost in lokacijo (po želji)
-
-### 2. 🧠 Matching sistem
-
-* Sistem poveže uporabnike z dopolnjujočimi se znanji
-* Filtri: jezik, lokacija, izkušnje
-
-### 3. 📅 Seje izmenjave
-
-* Predlagaj in sprejmi termine
-* Video srečanja preko Zooma
-* Beleženje sejn in napredka
-
-### 4. ⚖️ Sistem točk
-
-* Poučevanje → zaslužiš točke
-* Učenje → porabiš točke
-* Uravnotežena in poštena izmenjava
-
-### 5. ⭐ Ocenjevanje in napredek
-
-* Ocenjevanje po seji
-* Sledenje napredku in povratnim informacijam
-
----
 
 ## 👥 Ekipa
 

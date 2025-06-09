@@ -189,7 +189,11 @@ export default function AuthForm() {
 
           <div className="mt-6 text-center">
             <button
-              onClick={() => setMode(mode === 'login' ? 'signup' : 'login')}
+              onClick={() => {
+                setMode(mode === 'login' ? 'signup' : 'login');
+                setError('');
+                setSuccess('');
+              }}
               className="text-lg text-orange-500 hover:text-orange-600 font-medium underline"
             >
               {mode === 'login'

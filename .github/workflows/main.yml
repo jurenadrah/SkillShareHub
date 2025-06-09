@@ -20,30 +20,32 @@ jobs:
         with:
           node-version: '20'
           cache: 'npm'
-          
-      - name: Change to app directory
-        run: cd skillsharehub
-        
+
       - name: Install dependencies
         run: npm ci
+        working-directory: ./skillsharehub
 
       - name: Run ESLint
         run: npm run lint
+        working-directory: ./skillsharehub
 
       - name: Run type checking
         run: npx tsc --noEmit
+        working-directory: ./skillsharehub
 
       - name: Run unit tests
         run: npm run test:unit
+        working-directory: ./skillsharehub
 
       - name: Build application
         run: npm run build
+        working-directory: ./skillsharehub
 
       - name: Upload coverage reports
         uses: codecov/codecov-action@v3
         if: always()
         with:
-          file: ./coverage/lcov.info
+          file: ./skillsharehub/coverage/lcov.info
           flags: unittests
           name: codecov-umbrella
 

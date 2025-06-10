@@ -1,6 +1,7 @@
 'use client'
 import { useEffect, useState } from 'react';
 import { supabase } from '@/lib/supabase';
+import Link from 'next/link';
 
 type Post = {
   id: string;
@@ -393,7 +394,13 @@ export default function PostsPage() {
             >
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
                 <p style={{ marginBottom: 6, fontWeight: '700', fontSize: '1.05rem' }}>
-                    {user ? `${user.ime} ${user.priimek}` : 'Neznan uporabnik'}
+                  {user ? (
+                    <Link href={`/viewprofile/${post.fk_uporabniki_id}`} passHref>
+                        {user.ime} {user.priimek}
+                    </Link>
+                  ) : (
+                    'Neznan uporabnik'
+                  )}
                 </p>
                 {isAuthor && (
                     <div>

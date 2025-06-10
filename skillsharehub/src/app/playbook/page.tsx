@@ -1,73 +1,89 @@
 'use client';
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import styles from './playbook.module.css';
 
-type Subject = {
-  name: string;
-  content: string;
-  exercises?: { question: string; placeholder: string; solution: string }[];
-};
+interface Topic {
+  subject: string;
+  categories: string[];
+}
 
-const subjects: Subject[] = [
+const topics: Topic[] = [
   {
-    name: 'Matematika',
-    content: `
-- Kvadratna enačba: ax² + bx + c = 0
-- Derivacije: f'(x) = lim(h->0) (f(x+h)-f(x))/h
-- Integrali: ∫f(x)dx = F(x) + C
-- Trigonometrija: sin²x + cos²x = 1
-- Logaritmi: logₐ(xy) = logₐx + logₐy
-    `,
-    exercises: [
-      {
-        question: 'Izračunaj ničli enačbe: x² - 5x + 6 = 0',
-        placeholder: 'Vpiši ničli ločeni z vejico (npr. 2,3)',
-        solution: '2,3',
-      },
-    ],
+    subject: 'Matematika',
+    categories: ['Kvadratne enačbe', 'Derivacije', 'Integrali', 'Trigonometrija', 'Logaritmi'],
   },
   {
-    name: 'Programiranje',
-    content: `
-- Spremenljivke: let, const, var
-- Funkcije: function ime(parametri) { ... }
-- Zanke: for, while, do...while
-- Objektno usmerjeno programiranje: razredi, dedovanje
-- API-ji: REST, fetch(), axios
-    `,
-    exercises: [
-      {
-        question: 'Kaj bo izpisano?\n\nlet x = 5;\nif (x > 3) { console.log("večji"); }',
-        placeholder: 'Vpiši izpis...',
-        solution: 'večji',
-      },
-    ],
+    subject: 'Programiranje',
+    categories: ['Spremenljivke', 'Funkcije', 'Zanke', 'OOP', 'API-ji'],
   },
   {
-    name: 'Informacijski sistemi',
-    content: `
-- ER modeli: entiteta, atribut, relacija
-- Normalizacija: 1NF, 2NF, 3NF
-- UML diagrami: razredni, zaporedni
-- Relacijska baza: tabele, primarni ključ, tuji ključ
-- CRUD operacije: Create, Read, Update, Delete
-    `,
-    exercises: [
-      {
-        question: 'Katera normalna forma odstrani delno funkcionalno odvisnost?',
-        placeholder: 'Vpiši obliko...',
-        solution: '2NF',
-      },
-    ],
+    subject: 'Informacijski sistemi',
+    categories: ['ER modeli', 'Normalizacija', 'UML diagrami', 'Relacijska baza', 'CRUD operacije'],
   },
 ];
 
 export default function PlaybookPage() {
-  const [selected, setSelected] = useState(subjects[0]);
-  const [answers, setAnswers] = useState<{ [key: string]: string }>({});
+  const [selectedSubject, setSelectedSubject] = useState(topics[0].subject);
+  const [selectedCategory, setSelectedCategory] = useState(topics[0].categories[0]);
+  const [question, setQuestion] = useState('');
+  const [solution, setSolution] = useState('');
+  const [userAnswer, setUserAnswer] = useState('');
+  const [isCorrect, setIsCorrect] = useState<boolean | null>(null);
+  const [isLoading, setIsLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
 
-  const handleAnswerChange = (key: string, value: string) => {
-    setAnswers((prev) => ({ ...prev, [key]: value }));
+  const generateExercise = async () => {
+    setIsLoading(true);
+    setError(null);
+    setUserAnswer('');
+    setIsCorrect(null);
+    
+    try {
+      // Tukaj dejansko pokličite vaš API endpoint
+      const response = await fetch('/api/generate-exercise', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ 
+          subject: selectedSubject,
+          category: selectedCategory,
+          difficulty: 'medium' // Lahko dodate težavnost
+        }),
+      });
+
+      if (!response.ok) {
+        throw new Error('Napaka pri generiranju naloge');
+      }
+
+      const data = await response.json();
+      
+      if (!data.question || !data.solution) {
+        throw new Error('API je vrnil nepopolne podatke');
+      }
+
+      setQuestion(data.question);
+      setSolution(data.solution);
+    } catch (err) {
+      setError('Prišlo je do napake pri generiranju naloge. Poskusite znova.');
+      console.error('API error:', err);
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  useEffect(() => {
+    generateExercise();
+  }, [selectedSubject, selectedCategory]);
+
+  const checkAnswer = () => {
+    // Bolj fleksibilno preverjanje odgovora
+    const normalizedUserAnswer = userAnswer.trim().toLowerCase();
+    const normalizedSolution = solution.trim().toLowerCase();
+    
+    setIsCorrect(normalizedUserAnswer === normalizedSolution);
+  };
+
+  const handleNewExercise = () => {
+    generateExercise();
   };
 
   return (
@@ -75,49 +91,94 @@ export default function PlaybookPage() {
       <aside className={styles.sidebar}>
         <h2>Predmeti</h2>
         <ul>
-          {subjects.map((subject) => (
+          {topics.map((topic) => (
             <li
-              key={subject.name}
-              className={subject.name === selected.name ? styles.active : ''}
-              onClick={() => setSelected(subject)}
+              key={topic.subject}
+              className={selectedSubject === topic.subject ? styles.active : ''}
+              onClick={() => {
+                setSelectedSubject(topic.subject);
+                setSelectedCategory(topic.categories[0]);
+              }}
             >
-              {subject.name}
+              {topic.subject}
             </li>
           ))}
+        </ul>
+
+        <h3>Kategorije</h3>
+        <ul>
+          {topics
+            .find((t) => t.subject === selectedSubject)
+            ?.categories.map((cat) => (
+              <li
+                key={cat}
+                className={selectedCategory === cat ? styles.active : ''}
+                onClick={() => setSelectedCategory(cat)}
+              >
+                {cat}
+              </li>
+            ))}
         </ul>
       </aside>
 
       <main className={styles.content}>
-        <h1>{selected.name}</h1>
-        <pre>{selected.content}</pre>
+        <h1>{selectedSubject} – {selectedCategory}</h1>
 
-        {selected.exercises && (
-          <div className={styles.exercises}>
-            <h2>Interaktivne naloge</h2>
-            {selected.exercises.map((ex, index) => {
-              const key = `${selected.name}-${index}`;
-              const isCorrect = answers[key]?.trim() === ex.solution;
-              return (
-                <div key={key} className={styles.exerciseBox}>
-                  <p>{ex.question}</p>
-                  <input
-                    type="text"
-                    placeholder={ex.placeholder}
-                    value={answers[key] || ''}
-                    onChange={(e) => handleAnswerChange(key, e.target.value)}
-                  />
-                  <div className={styles.feedback}>
-                    {answers[key] && (
-                      isCorrect ? (
-                        <span className={styles.correct}>✅ Pravilno!</span>
-                      ) : (
-                        <span className={styles.incorrect}>❌ Napačno</span>
-                      )
-                    )}
+        {isLoading && <p className={styles.loading}>Generiram nalogo...</p>}
+        {error && <p className={styles.error}>{error}</p>}
+
+        {!isLoading && !error && question && (
+          <div className={styles.exerciseBox}>
+            <div className={styles.questionHeader}>
+              <h2>Naloga</h2>
+              <button 
+                onClick={handleNewExercise}
+                className={styles.newExerciseBtn}
+              >
+                Nova naloga
+              </button>
+            </div>
+            
+            <p className={styles.questionText}>{question}</p>
+            
+            <div className={styles.answerSection}>
+              <input
+                type="text"
+                placeholder="Vpiši odgovor..."
+                value={userAnswer}
+                onChange={(e) => setUserAnswer(e.target.value)}
+                disabled={isCorrect === true}
+                className={styles.answerInput}
+              />
+              
+              <div className={styles.buttonGroup}>
+                <button 
+                  onClick={checkAnswer} 
+                  className={styles.checkBtn}
+                  disabled={!userAnswer.trim()}
+                >
+                  Preveri
+                </button>
+              </div>
+            </div>
+
+            {isCorrect !== null && (
+              <div className={styles.feedback}>
+                {isCorrect ? (
+                  <div className={styles.correct}>
+                    <span>✅ Pravilno!</span>
+                    <button 
+                      onClick={handleNewExercise}
+                      className={styles.nextBtn}
+                    >
+                      Naslednja naloga
+                    </button>
                   </div>
-                </div>
-              );
-            })}
+                ) : (
+                  <span className={styles.incorrect}>❌ Napačno, poskusi znova</span>
+                )}
+              </div>
+            )}
           </div>
         )}
       </main>

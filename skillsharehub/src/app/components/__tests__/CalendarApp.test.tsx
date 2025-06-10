@@ -201,6 +201,7 @@ describe('CalendarApp', () => {
     })
   })
 
+
   describe('Component Props', () => {
     it('accepts and handles userEvents prop correctly', () => {
       render(<CalendarApp userEvents={mockUserEvents} />)

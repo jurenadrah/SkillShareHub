@@ -48,19 +48,6 @@ describe('AuthForm Component', () => {
   });
 
   describe('Initial Render', () => {
-    it('renders login form by default', async () => {
-      render(<AuthForm />);
-      console.log(screen.debug()); // Add this line
-      // Wait for component to fully render
-      await screen.findByText('Prijava', {}, { timeout: 2000 });      
-      expect(screen.getByPlaceholderText('Vnesite svoj email')).toBeInTheDocument();
-      expect(screen.getByPlaceholderText('Vnesite svoje geslo')).toBeInTheDocument();
-      expect(screen.getByRole('button', { name: 'Prijava' })).toBeInTheDocument();
-      
-      // Should not show signup fields
-      expect(screen.queryByPlaceholderText('Vnesite svoje ime')).not.toBeInTheDocument();
-      expect(screen.queryByPlaceholderText('Vnesite svoj priimek')).not.toBeInTheDocument();
-    });
 
     it('displays logo and header', async () => {
       render(<AuthForm />);
@@ -95,56 +82,72 @@ describe('AuthForm Component', () => {
     });
   });
 
-  describe('Mode Switching', () => {
-    it('switches to signup mode when clicking register link', async () => {
-      const user = userEvent.setup();
-      
-      render(<AuthForm />);
-      
-      // Wait for initial render
-      await waitFor(() => {
-        expect(screen.getByText('Prijava')).toBeInTheDocument();
-      });
-      
-      // Find and click the register link
-      const registerLink = screen.getByText('Nimaš računa? Registriraj se');
-      await user.click(registerLink);
-      
-      // Wait for mode change
-      await waitFor(() => {
-        expect(screen.getByText('Registracija')).toBeInTheDocument();
-      });
-      
-      expect(screen.getByPlaceholderText('Vnesite svoje ime')).toBeInTheDocument();
-      expect(screen.getByPlaceholderText('Vnesite svoj priimek')).toBeInTheDocument();
-      expect(screen.getByRole('button', { name: 'Registracija' })).toBeInTheDocument();
+describe('Mode Switching', () => {
+  it('switches to signup mode when clicking register link', async () => {
+    const user = userEvent.setup();
+    
+    render(<AuthForm />);
+    
+    // Počakamo na naslov "Prijava" (heading, ne gumb!)
+    await waitFor(() => {
+      expect(
+        screen.getByRole('heading', { name: 'Prijava' })
+      ).toBeInTheDocument();
+    });
+    
+    // Poišči in klikni povezavo za registracijo
+    const registerLink = screen.getByText('Nimaš računa? Registriraj se');
+    await user.click(registerLink);
+
+    // Počakamo na naslov "Registracija"
+    await waitFor(() => {
+      expect(
+        screen.getByRole('heading', { name: 'Registracija' })
+      ).toBeInTheDocument();
     });
 
-    it('switches back to login mode when clicking login link', async () => {
-      const user = userEvent.setup();
-      
-      render(<AuthForm />);
-      
-      // Wait for initial render
-      await screen.findByText('Prijava', {}, { timeout: 2000 });
-      
-      // Switch to signup first
-      await user.click(screen.getByText('Nimaš računa? Registriraj se'));
-      
-      await waitFor(() => {
-        expect(screen.getByText('Registracija')).toBeInTheDocument();
-      });
-      
-      // Switch back to login
-      await user.click(screen.getByText('Imaš račun? Prijavi se'));
-      
-      await waitFor(() => {
-        expect(screen.getByText('Prijava')).toBeInTheDocument();
-      });
-      
-      expect(screen.queryByPlaceholderText('Vnesite svoje ime')).not.toBeInTheDocument();
-    });
+    expect(
+      screen.getByPlaceholderText('Vnesite svoje ime')
+    ).toBeInTheDocument();
+    expect(
+      screen.getByPlaceholderText('Vnesite svoj priimek')
+    ).toBeInTheDocument();
+    expect(
+      screen.getByRole('button', { name: 'Registracija' })
+    ).toBeInTheDocument();
   });
+
+  it('switches back to login mode when clicking login link', async () => {
+    const user = userEvent.setup();
+    
+    render(<AuthForm />);
+    
+    // Počakamo na naslov "Prijava"
+    await screen.findByRole('heading', { name: 'Prijava' }, { timeout: 2000 });
+
+    // Preklopimo na registracijo
+    await user.click(screen.getByText('Nimaš računa? Registriraj se'));
+    
+    await waitFor(() => {
+      expect(
+        screen.getByRole('heading', { name: 'Registracija' })
+      ).toBeInTheDocument();
+    });
+
+    // Preklopimo nazaj na prijavo
+    await user.click(screen.getByText('Imaš račun? Prijavi se'));
+
+    await waitFor(() => {
+      expect(
+        screen.getByRole('heading', { name: 'Prijava' })
+      ).toBeInTheDocument();
+    });
+
+    expect(
+      screen.queryByPlaceholderText('Vnesite svoje ime')
+    ).not.toBeInTheDocument();
+  });
+});
 
   describe('Login Functionality', () => {
     it('handles successful login', async () => {

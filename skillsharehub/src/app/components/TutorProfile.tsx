@@ -34,11 +34,6 @@ type TipPredmeta = {
   naziv: string
 }
 
-type TutorPredmet = {
-  fk_Uporabniki: number
-  fk_Predmeti: number
-}
-
 type Event = {
   id?: number
   fk_id_uporabnik: number
@@ -183,10 +178,12 @@ export default function TutorProfile() {
         .eq('tutor_id', data.id)
 
       if (oceneData) {
-        const formatiraneOcene = oceneData.map((o: any) => ({
+        const formatiraneOcene = oceneData.map((o: { komentar: string; tocke: number; ucenec?: { email?: string }[] }) => ({
           komentar: o.komentar,
           tocke: o.tocke,
-          ucenec_email: o.ucenec?.email || 'Neznan učenec'
+          ucenec_email: Array.isArray(o.ucenec) && o.ucenec.length > 0 && o.ucenec[0]?.email
+            ? o.ucenec[0].email
+            : 'Neznan učenec'
         }))
         setOcene(formatiraneOcene)
       }
@@ -423,69 +420,7 @@ const kupiBanner = async () => {
       setError('Napaka pri dodajanju predmeta: ' + (err as Error).message)
     }
   }
-const dodajBanner = async () => {
-  if (!window.confirm('Ali ste prepričani, da želite dodati nov banner?')) return
 
-  try {
-    const { error } = await supabase
-      .from('Bannerji')
-      .insert([{
-        naziv: prompt('Vnesite ime bannerja:') || 'Nov Banner',
-        cena: parseInt(prompt('Vnesite ceno (točke):') || '100'),
-        slika_url: prompt('Vnesite URL slike:') || ''
-      }])
-
-    if (error) throw error
-    setSuccess('Banner uspešno dodan!')
-    // Osveži seznam bannerjev
-    const { data } = await supabase.from('Bannerji').select('*')
-    if (data) setBannerji(data)
-  } catch (err) {
-    setError('Napaka pri dodajanju bannerja: ' + (err as Error).message)
-  }
-}
-const handleBannerUpload = async (e: React.ChangeEvent<HTMLInputElement>, bannerLevel: number) => {
-  const file = e.target.files?.[0]
-  if (!file) return
-
-  const filePath = `bannerji/${bannerLevel}.png` // ali .jpg, odvisno od formata
-
-  // Naloži sliko v storage
-  const { error: uploadError } = await supabase.storage
-    .from('bannerji') // Vaš bucket za bannerje
-    .upload(filePath, file, { upsert: true })
-
-  if (uploadError) {
-    setError('Napaka pri nalaganju bannerja: ' + uploadError.message)
-    return
-  }
-
-  // Pridobi javni URL
-  const { data: publicUrlData } = supabase.storage
-    .from('bannerji')
-    .getPublicUrl(filePath)
-
-  if (publicUrlData?.publicUrl) {
-    // Shrani URL v bazo podatkov
-    const { error } = await supabase
-      .from('Bannerji')
-      .upsert({
-        id: bannerLevel,
-        naziv: `Banner ${bannerLevel}`,
-        cena: bannerPrices[bannerLevel - 1],
-        slika_url: publicUrlData.publicUrl
-      })
-
-    if (error) {
-      setError('Napaka pri shranjevanju bannerja: ' + error.message)
-    } else {
-      setSuccess(`Banner ${bannerLevel} uspešno naložen in shranjen!`)
-      // Osveži seznam bannerjev
-      const { data } = await supabase.from('Bannerji').select('*')
-      if (data) setBannerji(data)
-    }
-  }
-}
   const dodajDogodek = async () => {
     if (!tutor) return
 
@@ -763,7 +698,7 @@ const handleBannerUpload = async (e: React.ChangeEvent<HTMLInputElement>, banner
             bannerji.find(b => b.slika_url === tutor.aktiven_banner)?.cena === price
           ) + 1} / {bannerPrices.length}</p>
           {!hasMaxBanner && (
-            <p>Za nadgradnjo kliknite gumb "Upgrade banner".</p>
+            <p>Za nadgradnjo kliknite gumb &quot;Upgrade banner&quot;.</p>
           )}
         </>
       ) : (

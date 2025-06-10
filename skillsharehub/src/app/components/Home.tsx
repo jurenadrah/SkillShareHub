@@ -1,24 +1,13 @@
 'use client'
-/// v eventu odstrani stolpec lecturer pa pridobivaj iz foreign key uporabnika, ime tutorja
+
 import { useEffect, useState } from 'react'
 import { supabase } from '@/lib/supabase'
 import { format, startOfWeek, addDays, isSameDay, parseISO, isWithinInterval } from 'date-fns'
 import { sl } from 'date-fns/locale'
 import EventCard from './EventCard'
-import Navbar from './Navbar'
 import Hero from './Hero'
 import VideoPreview from './VideoPreview'
 import { useRouter } from 'next/navigation';
-
-
-// Define types based on your database schema
-type Uporabnik = {
-  id: number
-  ime: string
-  priimek: string
-  email: string
-  tutor?: boolean
-}
 
 type Predmet = {
   id: number
@@ -45,7 +34,6 @@ type User = {
 
 
 export default function Home() {
-  const [users, setUsers] = useState<Uporabnik[]>([])
   const [events, setEvents] = useState<HomeEvent[]>([])
   const [filteredEvents, setFilteredEvents] = useState<HomeEvent[]>([])
   const [predmeti, setPredmeti] = useState<Predmet[]>([])
@@ -85,17 +73,6 @@ export default function Home() {
             setJoinedEvents(new Set(joinedEventsData.map(ue => ue.event_id)))
           }
         }
-      }
-
-      // Fetch users
-      const { data: userData, error: userError } = await supabase
-        .from('Uporabniki')
-        .select('*')
-      
-      if (userError) {
-        console.error('User fetch error:', userError)
-      } else {
-        setUsers(userData as Uporabnik[])
       }
       
       // Fetch predmeti (subjects)
@@ -337,7 +314,10 @@ export default function Home() {
         {dayEvents.map((event) => (
           <EventCard
             key={event.id}
-            event={event as any}
+            event={{
+              ...event,
+              fk_id_uporabnik: { ime: '', priimek: undefined } // Provide default or fetch actual user info if available
+            }}
             user={user}
             isJoined={joinedEvents.has(event.id)}
             onJoinSuccess={handleJoinSuccess}

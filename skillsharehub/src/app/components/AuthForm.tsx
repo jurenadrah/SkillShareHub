@@ -12,17 +12,26 @@ export default function AuthForm() {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
   const [success, setSuccess] = useState('');
-  const [user, setUser] = useState<any>(null);
+  type User = { email: string; id: string }
+  const [user, setUser] = useState<User | null>(null);
 
   useEffect(() => {
     const getUser = async () => {
       const { data } = await supabase.auth.getUser();
-      setUser(data.user);
+      if (data.user && data.user.email) {
+        setUser({ email: data.user.email, id: data.user.id });
+      } else {
+        setUser(null);
+      }
     };
     getUser();
 
     const { data: listener } = supabase.auth.onAuthStateChange((_event, session) => {
-      setUser(session?.user ?? null);
+      if (session?.user && session.user.email) {
+        setUser({ email: session.user.email, id: session.user.id });
+      } else {
+        setUser(null);
+      }
     });
 
     return () => {
@@ -35,17 +44,6 @@ export default function AuthForm() {
     setLoading(true);
     setError('');
     setSuccess('');
-
-    const { data, error: signUpError } = await supabase.auth.signUp({
-      email,
-      password,
-    });
-
-    if (signUpError) {
-      setError(signUpError.message);
-      setLoading(false);
-      return;
-    }
 
     const { error: dbError } = await supabase
       .from('Uporabniki')

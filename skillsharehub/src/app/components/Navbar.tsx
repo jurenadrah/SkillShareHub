@@ -1,5 +1,6 @@
 'use client'
 
+import { User as SupabaseUser } from '@supabase/supabase-js'
 import { useEffect, useState } from 'react'
 import { useRouter } from 'next/navigation'
 import { supabase } from '@/lib/supabase'
@@ -7,7 +8,7 @@ import AuthForm from './AuthForm'
 
 export default function Navbar() {
   const router = useRouter()
-  const [user, setUser] = useState<any>(null)
+  const [user, setUser] = useState<SupabaseUser | null>(null)
   const [showAuthModal, setShowAuthModal] = useState(false)
 
   useEffect(() => {

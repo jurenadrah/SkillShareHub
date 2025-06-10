@@ -87,15 +87,15 @@ export default function StudentProfile() {
 
       await checkGoogleConnection()
 
-      const { data, error } = await supabase
+      const { data } = await supabase
         .from('Uporabniki')
         .select('id, ime, priimek, email, bio, profilna_slika, tutor')
         .eq('email', user.email)
         .single()
 
-      if (error) {
+      if (!data) {
         setError('Napaka pri nalaganju profila.')
-      } else if (data) {
+      } else {
         setUporabnik(data)
         setEmail(data.email)
         setBio(data.bio ?? '')
@@ -138,7 +138,7 @@ export default function StudentProfile() {
       if (error) throw error
       
       setUserEvents(
-        (data || []).map((ue: any) => ({
+        (data || []).map((ue) => ({
           ...ue,
           event: ue.event && Array.isArray(ue.event) ? {
             ...ue.event[0],
@@ -146,7 +146,7 @@ export default function StudentProfile() {
               ? ue.event[0].predmet[0]
               : ue.event[0]?.predmet
           } : ue.event
-        }))
+        })) as UserEvent[]
       )
     } catch (err) {
       console.error('Error fetching user events:', err)
@@ -233,8 +233,8 @@ export default function StudentProfile() {
     setGoogleLoading(true)
     setError(null)
     
-    try {
-      const { data, error } = await supabase.auth.signInWithOAuth({
+try {
+      const { error } = await supabase.auth.signInWithOAuth({
         provider: 'google',
         options: {
           redirectTo: `${window.location.origin}/student`,
@@ -252,21 +252,9 @@ export default function StudentProfile() {
       } else {
         // Connection initiated, loading will be handled by redirect
       }
-    } catch (e: any) {
-      setError('Napaka: ' + e.message)
-      setGoogleLoading(false)
-    }
-  }
-
-  const disconnectGoogleAccount = async () => {
-    setGoogleLoading(true)
-    try {
-      // Note: Supabase doesn't have a direct method to unlink providers
-      // You might need to implement this on your backend
-      setSuccess('Za prekinitev Google povezave se obrnite na podporo.')
-    } catch (error) {
-      setError('Napaka pri prekinjanju Google povezave.')
-    } finally {
+    } catch (e) {
+      const errorMsg = e instanceof Error ? e.message : String(e)
+      setError('Napaka: ' + errorMsg)
       setGoogleLoading(false)
     }
   }

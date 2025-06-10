@@ -28,6 +28,23 @@ type UserEvent = {
   }
 }
 
+type EventDetail = {
+  id: number
+  title: string
+  description: string
+  start_date_time: string
+  end_date_time: string
+  lecturer: string
+  fk_id_uporabnik?: {
+    ime: string
+    priimek?: string
+    zoom_link?: string
+  } | null
+  predmet?: {
+    naziv: string
+  }
+}
+
 interface MyEventsProps {
   userEvents: UserEvent[]
   onEventRemoved: (userEventId: number) => void
@@ -37,7 +54,7 @@ interface MyEventsProps {
 export default function MyEvents({ userEvents, onEventRemoved, hasGoogleConnected }: MyEventsProps) {
   const [leavingEvents, setLeavingEvents] = useState(new Set<number>())
   const [messages, setMessages] = useState(new Map<number, { type: 'success' | 'error' | 'info', text: string }>())
-  const [eventDetails, setEventDetails] = useState(new Map<number, any>())
+  const [eventDetails, setEventDetails] = useState<Map<number, EventDetail>>(new Map())
   const [currentTime, setCurrentTime] = useState(new Date())
   const [userPoints, setUserPoints] = useState<number | null>(null)
 
@@ -53,10 +70,6 @@ export default function MyEvents({ userEvents, onEventRemoved, hasGoogleConnecte
   }, [])
 
   // Helperji za marker "že plačano"
-  const checkIfAlreadyPaid = (userId: number, eventId: number) => {
-    const key = `event_paid_${userId}_${eventId}`
-    return typeof window !== 'undefined' && localStorage.getItem(key) === 'true'
-  }
   const setAlreadyPaid = (userId: number, eventId: number) => {
     const key = `event_paid_${userId}_${eventId}`
     typeof window !== 'undefined' && localStorage.setItem(key, 'true')
@@ -306,9 +319,11 @@ const handleLeaveEvent = async (userEventId: number, eventId: number, googleEven
             await GoogleCalendarAPI.deleteEvent(googleEventId, accessToken)
             googleRemovalMessage = 'Odstranjen iz Google Calendar'
           }
-        } catch (googleError: any) {
+        } catch (googleError) {
           googleRemovalSuccess = false
-          if (googleError.status === 401) {
+          // Try to get a new token if unauthorized
+          const status = (googleError as { status?: number })?.status
+          if (status === 401) {
             try {
               const newToken = await refreshGoogleToken()
               if (newToken) {
@@ -318,7 +333,7 @@ const handleLeaveEvent = async (userEventId: number, eventId: number, googleEven
               } else {
                 googleRemovalMessage = 'Google povezava je potekla - dogodek ostaja v Google Calendar'
               }
-            } catch (retryError) {
+            } catch {
               googleRemovalMessage = 'Napaka pri odstranitvi iz Google Calendar'
             }
           } else {

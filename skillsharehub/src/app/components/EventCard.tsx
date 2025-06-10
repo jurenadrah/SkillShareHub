@@ -54,13 +54,6 @@ const setAlreadyPaid = () => {
   localStorage.setItem(key, 'true')
 }
 
-// Ob izbrisu (leave) - če je "V teku", pusti v localStorage!
-const clearAlreadyPaid = () => {
-  if (!user) return
-  const key = `event_paid_${user.id}_${event.id}`
-  localStorage.removeItem(key)
-}
-
   // Update current time every minute for better accuracy
   useEffect(() => {
     const timer = setInterval(() => {
@@ -97,7 +90,7 @@ const clearAlreadyPaid = () => {
           .eq('id', user.id)
           .single()
         
-        if (!error && data) {
+        if (data) {
           setUserPoints(data.tocke)
         }
       } catch (error) {
@@ -130,7 +123,7 @@ const clearAlreadyPaid = () => {
 
   useEffect(() => {
     const fetchEvent = async () => {
-      const { data, error } = await supabase
+      const { data } = await supabase
         .from('Event')
         .select(`
           *,
@@ -141,7 +134,7 @@ const clearAlreadyPaid = () => {
         `)
         .eq('id', event.id)
         .single()
-      if (!error) setEventDetails(data)
+      if (data) setEventDetails(data)
     }
     fetchEvent()
   }, [event.id])
@@ -365,15 +358,17 @@ const handleJoinEvent = async () => {
             ? 'Ponovno dodano v osebni in Google koledar!' 
             : 'Dodano v osebni in Google koledar! (-5 točk)'
         }
-      } catch (googleError: any) {
+} catch (googleError) {
         console.error('Google Calendar sync failed:', googleError)
         
-        if (googleError.message === 'GOOGLE_AUTH_EXPIRED' || googleError.message === 'GOOGLE_NOT_CONNECTED') {
+        const errorMessage = (googleError as Error)?.message
+
+        if (errorMessage === 'GOOGLE_AUTH_EXPIRED' || errorMessage === 'GOOGLE_NOT_CONNECTED') {
           syncMessage = skipPointsDeduction 
             ? 'Ponovno dodano lokalno. Google povezava je potekla - prosimo, ponovno se povežite z Google računom.'
             : 'Dodano lokalno. Google povezava je potekla - prosimo, ponovno se povežite z Google računom. (-5 točk)'
           setMessage({ type: 'error', text: syncMessage })
-        } else if (googleError.message === 'GOOGLE_REFRESH_TOKEN_MISSING') {
+        } else if (errorMessage === 'GOOGLE_REFRESH_TOKEN_MISSING') {
           syncMessage = skipPointsDeduction 
             ? 'Ponovno dodano lokalno. Za Google sinhronizacijo se prosimo ponovno povežite z Google računom.'
             : 'Dodano lokalno. Za Google sinhronizacijo se prosimo ponovno povežite z Google računom. (-5 točk)'

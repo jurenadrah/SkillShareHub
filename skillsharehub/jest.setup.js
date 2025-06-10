@@ -69,12 +69,12 @@ const originalError = console.error
 console.error = (...args) => {
   const msg = args[0]
   if (
-    typeof msg === 'string' &&
-    (
+    typeof msg === 'string' && (
       msg.includes('was not wrapped in act') ||
       msg.includes('ReactDOMTestUtils.act') ||
       msg.includes('Network error') ||
-      msg.includes('Predmeti fetch error')
+      msg.includes('Predmeti fetch error') ||
+      msg.includes('Event fetch error')
     )
   ) {
     return

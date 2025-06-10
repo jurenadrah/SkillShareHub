@@ -1,4 +1,3 @@
-// Existing jest setup...
 import '@testing-library/jest-dom'
 import { TextEncoder, TextDecoder } from 'util'
 
@@ -66,13 +65,17 @@ jest.mock('@supabase/supabase-js', () => ({
 process.env.NEXT_PUBLIC_SUPABASE_URL = 'http://localhost:54321'
 process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY = 'test-anon-key'
 
-// Suppress act(...) warnings
 const originalError = console.error
 console.error = (...args) => {
+  const msg = args[0]
   if (
-    typeof args[0] === 'string' &&
-    args[0].includes('Warning: An update to') &&
-    args[0].includes('was not wrapped in act')
+    typeof msg === 'string' &&
+    (
+      msg.includes('was not wrapped in act') ||
+      msg.includes('ReactDOMTestUtils.act') ||
+      msg.includes('Network error') ||
+      msg.includes('Predmeti fetch error')
+    )
   ) {
     return
   }

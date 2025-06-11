@@ -1,226 +1,180 @@
-'use client'
-import React, { useEffect, useState } from 'react'
-import styles from './playbook.module.css'
+import Image from 'next/image';
+import styles from './about.module.css';
 
-const topics = [
-  {
-    subject: 'Matematika',
-    categories: ['Kvadratne enačbe', 'Derivacije', 'Integrali', 'Trigonometrija', 'Logaritmi'],
-  },
-  {
-    subject: 'Programiranje',
-    categories: ['Spremenljivke', 'Funkcije', 'Zanke', 'OOP', 'API-ji'],
-  },
-  {
-    subject: 'Informacijski sistemi',
-    categories: ['ER modeli', 'Normalizacija', 'UML diagrami', 'Relacijska baza', 'CRUD operacije'],
-  },
-]
-
-export default function PlaybookPage() {
-  const [selectedSubject, setSelectedSubject] = useState(topics[0].subject)
-  const [selectedCategory, setSelectedCategory] = useState(topics[0].categories[0])
-  const [question, setQuestion] = useState('')
-  const [solution, setSolution] = useState('')
-  const [userAnswer, setUserAnswer] = useState('')
-  const [isCorrect, setIsCorrect] = useState<boolean | null>(null)
-  const [isLoading, setIsLoading] = useState(false)
-  const [error, setError] = useState<string | null>(null)
-  const [apiStatus, setApiStatus] = useState<'idle' | 'pending' | 'success' | 'error'>('idle')
-
-  const generateExercise = async () => {
-    setIsLoading(true)
-    setError(null)
-    setUserAnswer('')
-    setIsCorrect(null)
-    setApiStatus('pending')
-    
-    try {
-      // Preverimo, ali API endpoint sploh obstaja
-      const apiUrl = '/api/generate-exercise'
-      const pingResponse = await fetch(apiUrl, { method: 'HEAD' })
-      
-      if (!pingResponse.ok) {
-        throw new Error('API endpoint ni dosegljiv. Preverite, ali route obstaja.')
-      }
-
-    const response = await fetch('/api/generate-exercise', {
-  method: 'POST',
-  headers: {
-    'Content-Type': 'application/json',
-  },
-  body: JSON.stringify({
-    subject: selectedSubject,
-    category: selectedCategory,
-    difficulty: 'medium',
-  }),
-});
-
-
-      // Dodatno preverjanje za netipične odzive
-      if (response.status === 404) {
-        throw new Error('API endpoint ni bil najden (404)')
-      }
-
-      if (response.status === 500) {
-        const errorData = await response.json()
-        throw new Error(errorData.error || 'Napaka na strežniku')
-      }
-
-      const contentType = response.headers.get('content-type')
-      if (!contentType || !contentType.includes('application/json')) {
-        throw new Error('Neveljaven odgovor od strežnika')
-      }
-
-      const data = await response.json()
-      
-      if (!data.question || !data.solution) {
-        console.error('Neveljavni podatki:', data)
-        throw new Error('Strežnik je vrnil nepopolne podatke')
-      }
-
-      setQuestion(data.question)
-      setSolution(data.solution)
-      setApiStatus('success')
-    } catch (err) {
-      setApiStatus('error')
-      const errorMessage = err instanceof Error ? err.message : 'Neznana napaka'
-      setError(`Prišlo je do napake: ${errorMessage}`)
-      
-      // Fallback na ročno generiranje naloge če API ne deluje
-      setQuestion(`Primer naloge za ${selectedCategory} v ${selectedSubject}`)
-      setSolution('Primer rešitve')
-      console.error('API klical ni uspel:', err)
-    } finally {
-      setIsLoading(false)
-    }
-  }
-
-  useEffect(() => {
-    generateExercise()
-  }, [selectedSubject, selectedCategory])
-
-  const checkAnswer = () => {
-    if (!userAnswer.trim()) return
-    
-    // Bolj fleksibilno preverjanje odgovora
-    const normalizedUserAnswer = userAnswer.trim().toLowerCase()
-    const normalizedSolution = solution.trim().toLowerCase()
-    
-    setIsCorrect(normalizedUserAnswer === normalizedSolution)
-  }
-
-  const handleNewExercise = () => {
-    generateExercise()
-  }
-
+export default function AboutPage() {
   return (
-    <div className={styles.playbookContainer}>
-      <aside className={styles.sidebar}>
-        <h2>Predmeti</h2>
-        <ul>
-          {topics.map((topic) => (
-            <li
-              key={topic.subject}
-              className={selectedSubject === topic.subject ? styles.active : ''}
-              onClick={() => {
-                setSelectedSubject(topic.subject)
-                setSelectedCategory(topic.categories[0])
-              }}
-            >
-              {topic.subject}
-            </li>
-          ))}
-        </ul>
+    <div className={styles.aboutContainer}>
+      <h1 className={styles.aboutTitle}>O nas – SkillShareHub</h1>
 
-        <h3>Kategorije</h3>
-        <ul>
-          {topics
-            .find((t) => t.subject === selectedSubject)
-            ?.categories.map((cat) => (
-              <li
-                key={cat}
-                className={selectedCategory === cat ? styles.active : ''}
-                onClick={() => setSelectedCategory(cat)}
-              >
-                {cat}
-              </li>
-            ))}
-        </ul>
-      </aside>
-
-      <main className={styles.content}>
-        <h1>{selectedSubject} – {selectedCategory}</h1>
-        
-        <div className={styles.apiStatus} data-status={apiStatus}>
-          Stanje API-ja: {apiStatus}
+      <div className={styles.contentBlock}>
+        <div className={styles.imageWrapper}>
+          <Image
+            src="/slikaAbout1.webp"
+            alt="Skupnost dijakov in študentov"
+            width={400}
+            height={250}
+            className={styles.aboutImage}
+          />
         </div>
+        <div className={styles.textWrapper}>
+          <h2 className={styles.sectionTitle}>Skupnost znanja</h2>
+          <p className={styles.aboutText}>
+  <strong>SkillShareHub</strong> je platforma, ki povezuje mlade – radovedne umove, ki si želijo učiti in biti
+  učeni. Verjamemo, da ima vsak posameznik nekaj, kar lahko deli z drugimi. Ker se zavedamo, da ni vsak posameznik za vse, smo ustvarili platformo,
+  kjer si lahko mladi to znanje delijo. Naš cilj je omogočiti varno, dostopno in vključujoče okolje za učenje.
+</p>
 
-        {isLoading ? (
-          <div className={styles.loadingState}>
-            <div className={styles.spinner}></div>
-            <p>Generiram nalogo...</p>
-          </div>
-        ) : error ? (
-          <div className={styles.errorState}>
-            <p>{error}</p>
-            <p>Uporabljam začasno rešitev z osnovnimi nalogami.</p>
-          </div>
-        ) : (
-          <div className={styles.exerciseBox}>
-            <div className={styles.questionHeader}>
-              <h2>Naloga</h2>
-              <button 
-                onClick={handleNewExercise}
-                className={styles.newExerciseBtn}
-                disabled={isLoading}
-              >
-                Nova naloga
-              </button>
-            </div>
-            
-            <p className={styles.questionText}>{question}</p>
-            
-            <div className={styles.answerSection}>
-              <input
-                type="text"
-                placeholder="Vpiši odgovor..."
-                value={userAnswer}
-                onChange={(e) => setUserAnswer(e.target.value)}
-                onKeyPress={(e) => e.key === 'Enter' && checkAnswer()}
-                disabled={isCorrect === true}
-                className={styles.answerInput}
-              />
-              
-              <button 
-                onClick={checkAnswer} 
-                className={styles.checkBtn}
-                disabled={!userAnswer.trim() || isLoading}
-              >
-                Preveri
-              </button>
-            </div>
+        </div>
+      </div>
 
-            {isCorrect !== null && (
-              <div className={`${styles.feedback} ${isCorrect ? styles.correct : styles.incorrect}`}>
-                {isCorrect ? (
-                  <>
-                    <span>✅ Pravilno!</span>
-                    <button 
-                      onClick={handleNewExercise}
-                      className={styles.nextBtn}
-                    >
-                      Naslednja naloga
-                    </button>
-                  </>
-                ) : (
-                  <span>❌ Napačno, poskusi znova</span>
-                )}
-              </div>
-            )}
-          </div>
-        )}
-      </main>
+      <div className={`${styles.contentBlock} ${styles.reverse}`}>
+        <div className={styles.imageWrapper}>
+          <Image
+            src="/slikaAbout2.webp"
+            alt="Mentorstvo in sodelovanje"
+            width={400}
+            height={250}
+            className={styles.aboutImage}
+          />
+        </div>
+        <div className={styles.textWrapper}>
+          <h2 className={styles.sectionTitle}>Povezovanje dijakov in študentov</h2>
+          <p className={styles.aboutText}>
+  SkillShareHub omogoča, da se tisti, ki imajo znanje, povežejo z drugimi, ki si želijo tega znanja. Mentorstvo,
+  sodelovanje in vzajemno učenje so v središču naše skupnosti. Dijaki in študenti imajo možnost deliti znanje z drugimi, ki potrebujejo pomoč,
+  v zameno pa se tudi sami naučijo od drugih. Tako gradimo mrežo sodelovanja in medsebojne podpore.
+</p>
+
+        </div>
+      </div>
+
+      <div className={styles.contentBlock}>
+        <div className={styles.imageWrapper}>
+          <Image
+            src="/slikaAbout3.webp"
+            alt="Skupinsko učenje"
+            width={400}
+            height={250}
+            className={styles.aboutImage}
+          />
+        </div>
+        <div className={styles.textWrapper}>
+          <h2 className={styles.sectionTitle}>Učenje, ki združuje</h2>
+         <p className={styles.aboutText}>
+  Učenje je lahko zabavno, dostopno in povezovalno. Pri nas ni pomembno, ali obvladaš matematiko, programiranje
+  ali umetnost – vsak prispeva svoj delček znanja in gradi celoto. Omogoča povezovanje z drugimi od kjerkoli na svetu.
+  Skupno učenje postane navdihujoča izkušnja, ki bogati vse udeležence.
+</p>
+
+        </div>
+      </div>
+
+      <div className={`${styles.contentBlock} ${styles.reverse}`}>
+        <div className={styles.imageWrapper}>
+          <Image
+            src="/about4.webp"
+            alt="Učimo se skupaj"
+            width={400}
+            height={250}
+            className={styles.aboutImage}
+          />
+        </div>
+        <div className={styles.textWrapper}>
+          <h2 className={styles.sectionTitle}>Ustvarjamo priložnosti</h2>
+        <p className={styles.aboutText}>
+  SkillShareHub ni zgolj platforma, temveč gibanje – gibanje, ki mladim omogoča osebni in strokovni razvoj,
+  samozavestno deljenje znanja ter navezovanje trajnih poznanstev. Vsak dobi priložnost deliti nekaj z drugimi, brez
+  potrebe po usklajevanju urnikov ter prevoznih stroškov. Vse poteka digitalno, a s pristnim človeškim stikom.
+</p>
+
+        </div>
+      </div>
+   <div className="bg-[#2a2a2a] mt-12 py-4 px-4 flex items-center justify-between">
+    <img src="/logo.png" alt="Logo" className="h-15" />
+  </div>
+<section className="bg-[#1e1e1e] text-white pt-16 pb-8">
+  
+  <div className="max-w-6xl mx-auto px-4 grid md:grid-cols-2 gap-8">
+    {/* Left Column - Contact Info */}
+    <div>
+      <h3 className="text-xl font-bold mb-4">Kontakt</h3>
+      <p className="mb-1">123-456-7890</p>
+      <p className="mb-6">info@skillsharehub.com</p>
+      
+      <div className="mt-6">
+        <h4 className="font-semibold mb-2">Nikoli ne zamudi predavanja.</h4>
+        <form className="flex flex-col space-y-2">
+          <input
+            type="email"
+            placeholder="Email *"
+            className="p-2 rounded bg-white text-black focus:outline-none focus:ring-2 focus:ring-orange-300"
+            required
+          />
+          <label className="flex items-center text-sm">
+            <input 
+              type="checkbox" 
+              className="mr-2 rounded text-orange-500 focus:ring-orange-300 bg-white" 
+            />
+            Da, želim prejemati obvestila.
+          </label>
+          <button 
+            type="submit"
+            className="bg-orange-300 text-black font-semibold px-4 py-2 rounded w-fit hover:bg-orange-400 transition-colors"
+          >
+            Naroči se
+          </button>
+        </form>
+      </div>
     </div>
-  )
+
+    {/* Right Column - Contact Form */}
+    <div>
+      <h3 className="text-xl font-bold mb-4">Vprašaj nas karkoli</h3>
+      <form className="space-y-4">
+        <div className="grid grid-cols-2 gap-4">
+          <input
+            type="text"
+            placeholder="Ime *"
+            className="p-2 rounded bg-white text-black focus:outline-none focus:ring-2 focus:ring-orange-300"
+            required
+          />
+          <input
+            type="text"
+            placeholder="Priimek *"
+            className="p-2 rounded bg-white text-black focus:outline-none focus:ring-2 focus:ring-orange-300"
+            required
+          />
+        </div>
+        <input
+          type="email"
+          placeholder="Email *"
+          className="p-2 rounded w-full bg-white text-black focus:outline-none focus:ring-2 focus:ring-orange-300"
+          required
+        />
+        <input
+          type="text"
+          placeholder="Zadeva"
+          className="p-2 rounded w-full bg-white text-black focus:outline-none focus:ring-2 focus:ring-orange-300"
+        />
+        <textarea
+          placeholder="Sporočilo..."
+          className="p-2 rounded w-full h-24 bg-white text-black focus:outline-none focus:ring-2 focus:ring-orange-300"
+        ></textarea>
+        <button 
+          type="submit"
+          className="bg-orange-300 text-black font-semibold px-6 py-2 rounded hover:bg-orange-400 transition-colors"
+        >
+          Pošlji
+        </button>
+      </form>
+    </div>
+  </div>
+  <div className=" mt-12 py-4 px-4 flex flex-col items-center justify-center text-center">
+  <p className="text-sm text-gray-400">
+    &copy; {new Date().getFullYear()} SkillShareHub. Vse pravice pridržane.
+  </p>
+</div>
+</section>
+    </div>
+  );
 }

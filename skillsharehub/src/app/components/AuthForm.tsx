@@ -39,28 +39,41 @@ export default function AuthForm() {
     };
   }, []);
 
-  const handleSignUp = async (e: React.FormEvent) => {
-    e.preventDefault();
-    setLoading(true);
-    setError('');
-    setSuccess('');
+const handleSignUp = async (e: React.FormEvent) => {
+  e.preventDefault();
+  setLoading(true);
+  setError('');
+  setSuccess('');
 
-    const { error: dbError } = await supabase
-      .from('Uporabniki')
-      .insert([{ email, ime, priimek, tutor: false }]);
+  // Najprej poskusi registrirati uporabnika v auth
+  const { data, error: signUpError } = await supabase.auth.signUp({
+    email,
+    password,
+  });
 
-    if (dbError) {
-      setError(dbError.message);
-    } else {
-      setSuccess('Registracija uspešna! Preveri email za potrditev.');
-      setEmail('');
-      setPassword('');
-      setIme('');
-      setPriimek('');
-    }
-
+  if (signUpError) {
+    setError(signUpError.message);
     setLoading(false);
-  };
+    return;
+  }
+
+  // Če je auth uspešen, vstavi še v tabelo
+  const { error: dbError } = await supabase
+    .from('Uporabniki')
+    .insert([{ email, ime, priimek, tutor: false }]);
+
+  if (dbError) {
+    setError(dbError.message);
+  } else {
+    setSuccess('Registracija uspešna! Preveri email za potrditev.');
+    setEmail('');
+    setPassword('');
+    setIme('');
+    setPriimek('');
+  }
+
+  setLoading(false);
+};
 
   const handleLogIn = async (e: React.FormEvent) => {
     e.preventDefault();

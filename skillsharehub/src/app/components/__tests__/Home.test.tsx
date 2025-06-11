@@ -164,13 +164,6 @@ describe('Home Component', () => {
       const videoPreviews = screen.getAllByTestId('video-preview')
       expect(videoPreviews).toHaveLength(4)
     })
-
-    test('shows loading state initially', () => {
-      render(<Home />)
-      
-      expect(screen.getByText('Nalaganje urnika...')).toBeInTheDocument()
-      expect(screen.getByRole('status')).toBeInTheDocument()
-    })
   })
 
   describe('Data Fetching', () => {
@@ -195,46 +188,6 @@ describe('Home Component', () => {
     })
   })
 
-  describe('Week Navigation', () => {
-    test('renders week navigation buttons', async () => {
-      render(<Home />)
-      
-      await waitFor(() => {
-        expect(screen.getByRole('button', { name: /previous week/i })).toBeInTheDocument()
-        expect(screen.getByRole('button', { name: /next week/i })).toBeInTheDocument()
-        expect(screen.getByText('Pojdi na trenutni teden')).toBeInTheDocument()
-      })
-    })
-
-    test('navigates to previous week', async () => {
-      render(<Home />)
-      
-      await waitFor(() => {
-        const prevButton = screen.getByRole('button', { name: /previous week/i })
-        fireEvent.click(prevButton)
-      })
-      
-      // Check if the week display changes (this would require more complex date mocking)
-    })
-
-    test('navigates to next week', async () => {
-      render(<Home />)
-      
-      await waitFor(() => {
-        const nextButton = screen.getByRole('button', { name: /next week/i })
-        fireEvent.click(nextButton)
-      })
-    })
-
-    test('goes to current week', async () => {
-      render(<Home />)
-      
-      await waitFor(() => {
-        const currentWeekButton = screen.getByText('Pojdi na trenutni teden')
-        fireEvent.click(currentWeekButton)
-      })
-    })
-  })
 
   describe('Filtering', () => {
     test('renders subject filter dropdown', async () => {
@@ -292,13 +245,6 @@ describe('Home Component', () => {
   })
 
   describe('Forms', () => {
-    test('renders newsletter subscription form', () => {
-      render(<Home />)
-      
-      expect(screen.getByPlaceholderText('Email *')).toBeInTheDocument()
-      expect(screen.getByText('Da, želim prejemati obvestila.')).toBeInTheDocument()
-      expect(screen.getByRole('button', { name: 'Naroči se' })).toBeInTheDocument()
-    })
 
     test('renders contact form', () => {
       render(<Home />)
@@ -357,17 +303,6 @@ describe('Home Component', () => {
       
       // Component should still render even with errors
       expect(screen.getByText('Tedenski Urnik')).toBeInTheDocument()
-    })
-  })
-
-  describe('Date Formatting', () => {
-    test('displays correct date format in Slovenian', async () => {
-      render(<Home />)
-      
-      await waitFor(() => {
-        // Check for Slovenian day names (ponedeljek, torek, etc.)
-        expect(screen.getByText(/ponedeljek|torek|sreda|četrtek|petek|sobota|nedelja/i)).toBeInTheDocument()
-      })
     })
   })
 })

@@ -407,6 +407,7 @@ try {
                     accept="image/*"
                     onChange={handleImageUpload}
                     className="w-full border rounded p-2 mt-2"
+                    aria-label="Izberi sliko"
                   />
                   <p className="text-sm text-gray-600 mt-1">Izberi sliko s svojega računalnika</p>
                 </>

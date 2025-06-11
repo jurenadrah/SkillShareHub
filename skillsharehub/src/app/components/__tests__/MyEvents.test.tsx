@@ -90,14 +90,17 @@ describe('MyEvents Component', () => {
 
   beforeEach(() => {
     jest.clearAllMocks();
+    jest.spyOn(console, 'error').mockImplementation(() => {})
     // Mock current time to a predictable value
     jest.useFakeTimers();
     jest.setSystemTime(new Date('2024-12-25T13:00:00Z')); // 1 hour before event
   });
 
   afterEach(() => {
+    (console.error as jest.Mock).mockRestore()
     jest.useRealTimers();
-  });
+
+  })
 
   test('renders empty state when no events', () => {
     render(<MyEvents {...defaultProps} userEvents={[]} />);

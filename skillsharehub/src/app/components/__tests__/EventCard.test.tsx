@@ -79,7 +79,12 @@ describe('EventCard', () => {
 
   beforeEach(() => {
     jest.clearAllMocks()
+    jest.spyOn(console, 'error').mockImplementation(() => {})
     localStorageMock.getItem.mockReturnValue(null)
+  })
+  
+  afterEach(() => {
+    (console.error as jest.Mock).mockRestore()
   })
 
   test('renders event card with basic information', () => {

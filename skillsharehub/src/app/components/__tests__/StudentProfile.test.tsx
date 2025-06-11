@@ -143,6 +143,7 @@ const createMockUserEvent = (overrides = {}) => ({
 describe('StudentProfile Component', () => {
   beforeEach(() => {
     jest.clearAllMocks()
+    jest.spyOn(console, 'error').mockImplementation(() => {})
     
     // Default mocks
     mockedGetUser.mockResolvedValue({ 
@@ -180,6 +181,10 @@ describe('StudentProfile Component', () => {
       }
       return { select: jest.fn() } as any
     })
+  })
+
+  afterEach(() => {
+    (console.error as jest.Mock).mockRestore()
   })
 
   test('renders loading state initially', () => {

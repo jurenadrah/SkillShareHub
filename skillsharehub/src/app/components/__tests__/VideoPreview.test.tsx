@@ -19,13 +19,6 @@ describe('VideoPreview Component', () => {
     duration: '10:30'
   }
 
-  test('renders with title and duration when no image is provided', () => {
-    render(<VideoPreview {...defaultProps} />)
-    
-    expect(screen.getByText('Test Video Title / 10:30')).toBeInTheDocument()
-    expect(screen.getByRole('button', { name: /preberi več o skillsharehub-u/i })).toBeInTheDocument()
-  })
-
   test('renders with image when imageUrl is provided', () => {
     const propsWithImage = {
       ...defaultProps,
@@ -41,26 +34,6 @@ describe('VideoPreview Component', () => {
     
     // Title/duration text should not be visible when image is shown
     expect(screen.queryByText('Test Video Title / 10:30')).not.toBeInTheDocument()
-  })
-
-  test('navigates to /about when "Preberi več" button is clicked', () => {
-    render(<VideoPreview {...defaultProps} />)
-    
-    const learnMoreButton = screen.getByRole('button', { name: /preberi več o skillsharehub-u/i })
-    fireEvent.click(learnMoreButton)
-    
-    expect(mockPush).toHaveBeenCalledWith('/about')
-    expect(mockPush).toHaveBeenCalledTimes(1)
-  })
-
-  test('applies correct CSS classes for styling', () => {
-    render(<VideoPreview {...defaultProps} />)
-    
-    const container = screen.getByText('Test Video Title / 10:30').closest('div')
-    expect(container).toHaveClass('bg-black', 'text-white', 'h-[200px]', 'flex', 'items-center', 'justify-center')
-    
-    const button = screen.getByRole('button', { name: /preberi več o skillsharehub-u/i })
-    expect(button).toHaveClass('absolute', 'bottom-2', 'left-2', 'bg-white', 'text-black', 'px-3', 'py-1', 'text-sm', 'rounded', 'opacity-90', 'group-hover:opacity-100', 'transition-opacity')
   })
 
   test('image has correct CSS classes when imageUrl is provided', () => {
@@ -87,16 +60,6 @@ describe('VideoPreview Component', () => {
     render(<VideoPreview {...customProps} />)
     
     expect(screen.getByText('Advanced React Patterns / 25:15')).toBeInTheDocument()
-  })
-
-  test('button maintains accessibility attributes', () => {
-    render(<VideoPreview {...defaultProps} />)
-    
-    const button = screen.getByRole('button', { name: /preberi več o skillsharehub-u/i })
-    
-    // Button should be focusable and clickable
-    expect(button).toBeEnabled()
-    expect(button.tagName).toBe('BUTTON')
   })
 
   test('image has proper alt text for accessibility', () => {

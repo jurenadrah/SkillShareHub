@@ -6,7 +6,7 @@ SkillShareHub je platforma, kjer lahko vsakdo deli in pridobiva nova znanja na e
 
 
 <p align="center">
-  <a href="https://google.com" target="_blank">
+  <a href="https://skill-share-hub-skillsharehubs-projects-a282906b.vercel.app" target="_blank">
     <img src="https://img.shields.io/badge/🌍 Obišči%20SkillShareHub%20spletno%20stran%20-%20KLIKNI%20TUKAJ-blue?style=for-the-badge&logo=google-chrome" alt="Obišči spletno stran SkillShareHub" />
   </a>
 </p>
@@ -24,7 +24,7 @@ SkillShareHub je platforma, kjer lahko vsakdo deli in pridobiva nova znanja na e
 
 ## 🚀 Ključne funkcionalnosti
 
-- 🔍 **Iskanje po interesih in lokaciji**
+- 🔍 **Izbira po interesih**
 - 🧩 **Skill-for-Skill sistem izmenjave**
 - 📆 **Koledar in upravljanje terminov**
 - 🎥 **Video srečanja prek Zooma**

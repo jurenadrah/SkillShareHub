@@ -433,7 +433,7 @@ describe('StudentProfile Component', () => {
       expect(mockedSignInWithOAuth).toHaveBeenCalledWith({
         provider: 'google',
         options: {
-          redirectTo: 'http://localhost:3000/profil',
+          redirectTo: 'https://skill-share-hub-skillsharehubs-projects-a282906b.vercel.app/profil',
           scopes: 'openid email profile https://www.googleapis.com/auth/calendar.events https://www.googleapis.com/auth/calendar.readonly',
           queryParams: {
             access_type: 'offline',

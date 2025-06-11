@@ -237,7 +237,7 @@ try {
       const { error } = await supabase.auth.signInWithOAuth({
         provider: 'google',
         options: {
-          redirectTo: `${window.location.origin}/profil`,
+          redirectTo: `https://skill-share-hub-skillsharehubs-projects-a282906b.vercel.app/profil`,
           scopes: 'openid email profile https://www.googleapis.com/auth/calendar.events https://www.googleapis.com/auth/calendar.readonly',
           queryParams: {
             access_type: 'offline', // This is crucial for getting refresh token

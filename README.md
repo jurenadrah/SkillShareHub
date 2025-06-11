@@ -24,7 +24,7 @@ SkillShareHub je platforma, kjer lahko vsakdo deli in pridobiva nova znanja na e
 
 ## 🚀 Ključne funkcionalnosti
 
-- 🔍 **Iskanje po interesih in lokaciji**
+- 🔍 **Izbira po interesih**
 - 🧩 **Skill-for-Skill sistem izmenjave**
 - 📆 **Koledar in upravljanje terminov**
 - 🎥 **Video srečanja prek Zooma**

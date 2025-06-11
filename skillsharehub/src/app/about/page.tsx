@@ -19,9 +19,9 @@ export default function AboutPage() {
         <div className={styles.textWrapper}>
           <h2 className={styles.sectionTitle}>Skupnost znanja</h2>
           <p className={styles.aboutText}>
-  <strong>SkillShareHub</strong> je platforma, ki povezuje mlade – radovedne umove, ki si želijo učiti in biti
+  <strong>SkillShareHub</strong> je platforma, ki povezuje mlade – radovedne ume, ki si želijo učiti in biti
   učeni. Verjamemo, da ima vsak posameznik nekaj, kar lahko deli z drugimi. Ker se zavedamo, da ni vsak posameznik za vse, smo ustvarili platformo,
-  kjer si lahko mladi to znanje delijo. Naš cilj je omogočiti varno, dostopno in vključujoče okolje za učenje.
+  kjer si lahko uporabniki to znanje delijo. Naš cilj je omogočiti varno, dostopno in vključujoče okolje za učenje.
 </p>
 
         </div>
@@ -38,11 +38,11 @@ export default function AboutPage() {
           />
         </div>
         <div className={styles.textWrapper}>
-          <h2 className={styles.sectionTitle}>Povezovanje dijakov in študentov</h2>
+          <h2 className={styles.sectionTitle}>Povezovanje uporabnikov</h2>
           <p className={styles.aboutText}>
   SkillShareHub omogoča, da se tisti, ki imajo znanje, povežejo z drugimi, ki si želijo tega znanja. Mentorstvo,
-  sodelovanje in vzajemno učenje so v središču naše skupnosti. Dijaki in študenti imajo možnost deliti znanje z drugimi, ki potrebujejo pomoč,
-  v zameno pa se tudi sami naučijo od drugih. Tako gradimo mrežo sodelovanja in medsebojne podpore.
+  sodelovanje in vzajemno učenje so v središču naše skupnosti. Tudi dijaki in študenti imajo možnost deliti znanje z drugimi, ki potrebujejo pomoč,
+  v zameno pa se tudi sami naučijo nekaj novega. Tako gradimo mrežo sodelovanja in medsebojne podpore.
 </p>
 
         </div>
@@ -61,8 +61,8 @@ export default function AboutPage() {
         <div className={styles.textWrapper}>
           <h2 className={styles.sectionTitle}>Učenje, ki združuje</h2>
          <p className={styles.aboutText}>
-  Učenje je lahko zabavno, dostopno in povezovalno. Pri nas ni pomembno, ali obvladaš matematiko, programiranje
-  ali umetnost – vsak prispeva svoj delček znanja in gradi celoto. Omogoča povezovanje z drugimi od kjerkoli na svetu.
+  Učenje je lahko zabavno, dostopno in povezovalno. V SkillShareHub-u ni pomembno, ali obvladaš matematiko, programiranje
+  ali umetnost – vsak prispeva svoj delček znanja in gradi celoto. Omogoča povezovanje z drugimi ne glede od kod so.
   Skupno učenje postane navdihujoča izkušnja, ki bogati vse udeležence.
 </p>
 
@@ -82,9 +82,8 @@ export default function AboutPage() {
         <div className={styles.textWrapper}>
           <h2 className={styles.sectionTitle}>Ustvarjamo priložnosti</h2>
         <p className={styles.aboutText}>
-  SkillShareHub ni zgolj platforma, temveč gibanje – gibanje, ki mladim omogoča osebni in strokovni razvoj,
-  samozavestno deljenje znanja ter navezovanje trajnih poznanstev. Vsak dobi priložnost deliti nekaj z drugimi, brez
-  potrebe po usklajevanju urnikov ter prevoznih stroškov. Vse poteka digitalno, a s pristnim človeškim stikom.
+  Želimo si, da SkillShareHub ni zgolj platforma, temveč gibanje – gibanje, ki mladim omogoča osebni in strokovni razvoj,
+  samozavestno deljenje znanja ter navezovanje trajnih poznanstev. Vsak dobi priložnost deliti nekaj z drugimi, z enostavnim usklajevanjem urnikov. Vse poteka digitalno, a s pristnim človeškim stikom.
 </p>
 
         </div>

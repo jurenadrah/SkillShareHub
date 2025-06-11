@@ -14,6 +14,7 @@ type Uporabniki = {
   id: number;
   ime: string;
   priimek: string;
+  profilna_slika: string | null;
 };
 
 type Uporabnik = {
@@ -47,10 +48,13 @@ export default function PostsPage() {
 
   const [allUsers, setAllUsers] = useState<Uporabniki[]>([]);
   const [postedUsers, setPostedUsers] = useState<Uporabniki[]>([]);
+  const [selectedPost, setSelectedPost] = useState<Post | null>(null);
+  const [isModalOpen, setIsModalOpen] = useState(false);
+
 
     useEffect(() => {
     async function fetchAllUsers() {
-      const { data } = await supabase.from('Uporabniki').select('id, ime, priimek');
+      const { data } = await supabase.from('Uporabniki').select('id, ime, priimek, profilna_slika');
       if (data) setAllUsers(data);
     }
 
@@ -60,7 +64,7 @@ export default function PostsPage() {
       if (ids.length > 0) {
         const { data: users } = await supabase
           .from('Uporabniki')
-          .select('id, ime, priimek')
+          .select('id, ime, priimek, profilna_slika')
           .in('id', ids);
         if (users) setPostedUsers(users);
       }
@@ -157,7 +161,7 @@ export default function PostsPage() {
     // Fetch all users by those IDs
     const { data: usersData, error: usersError } = await supabase
       .from('Uporabniki')
-      .select('id, ime, priimek')
+      .select('id, ime, priimek,profilna_slika')
       .in('id', userIds);
 
     if (usersError || !usersData) {
@@ -376,6 +380,82 @@ export default function PostsPage() {
         </button>
       </div>
 
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+      {/*odprto za podrobnosti posta in branje komentrarjev */}
+      {isModalOpen && selectedPost && (
+        <div
+          style={{
+            position: 'fixed',
+            top: 0,
+            left: 0,
+            width: '100vw',
+            height: '100vh',
+            backgroundColor: 'rgba(0,0,0,0.5)',
+            display: 'flex',
+            justifyContent: 'center',
+            alignItems: 'center',
+            zIndex: 999,
+          }}
+          onClick={() => setIsModalOpen(false)}
+        >
+          <div
+            onClick={(e) => e.stopPropagation()} // prevent closing when clicking inside modal
+            style={{
+              backgroundColor: 'white',
+              padding: '2rem',
+              borderRadius: 10,
+              width: '80%',
+              maxWidth: '1000px',
+              display: 'flex',
+              gap: '2rem',
+            }}
+          >
+            {/* Left side: Post details */}
+            <div style={{ flex: 1 }}>
+              <h2 style={{ marginBottom: '0.5rem' }}>
+                {usersMap[selectedPost.fk_uporabniki_id]?.ime} {usersMap[selectedPost.fk_uporabniki_id]?.priimek}
+              </h2>
+              <p style={{ whiteSpace: 'pre-wrap', lineHeight: 1.5 }}>{selectedPost.content}</p>
+              <small style={{ color: '#666' }}>
+                {new Date(selectedPost.created_at).toLocaleString()}
+              </small>
+            </div>
+
+            {/* Right side: placeholder for comments or other data */}
+            <div style={{ flex: 1, backgroundColor: '#f9f9f9', padding: '1rem', borderRadius: 8 }}>
+              <p><strong>Other Info</strong></p>
+              <p>Could be comments, metadata, etc.</p>
+            </div>
+          </div>
+        </div>
+      )}
+
+
+
+
+
+
+
+
+
+
+
+
+
       {/* Posts List */}
       <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
         {posts.map(post => {
@@ -384,6 +464,10 @@ export default function PostsPage() {
           return (
             <div
               key={post.id}
+              onClick={() => {
+                setSelectedPost(post);
+                setIsModalOpen(true);
+              }}
               style={{
                 padding: '1rem 1.5rem',
                 borderRadius: 10,
@@ -392,39 +476,47 @@ export default function PostsPage() {
                 border: '1px solid #eaeaea',
               }}
             >
-            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                <p style={{ marginBottom: 6, fontWeight: '700', fontSize: '1.05rem' }}>
-                  {user ? (
-                    <Link href={`/viewprofile/${post.fk_uporabniki_id}`} passHref>
-                        {user.ime} {user.priimek}
-                    </Link>
-                  ) : (
-                    'Neznan uporabnik'
+              {/* normal prikazani posti */}
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                  <div style={{ marginBottom: 6, fontWeight: '700', fontSize: '1.05rem' }}>
+                    {user ? (
+                      <Link href={`/viewprofile/${post.fk_uporabniki_id}`} passHref>
+                        <div className="flex items-center space-x-4">
+                          <img
+                            src={user.profilna_slika ?? "/default-profile.png"}
+                            alt="Profilna slika"
+                            className="w-10 h-10 object-cover rounded-full"
+                          />
+                          <span>{user.ime} {user.priimek}</span>
+                        </div>
+                      </Link>
+                    ) : (
+                      'Neznan uporabnik'
+                    )}
+                  </div>
+                  {isAuthor && (
+                      <div>
+                          <button
+                              onClick={() => handleDeletePost(post.id)}
+                              title="Izbriši objavo"
+                              style={{
+                              background: 'transparent',
+                              border: 'none',
+                              cursor: 'pointer',
+                              fontSize: '1.1rem',
+                              color: '#e74c3c',
+                              marginLeft: '1rem'
+                              }}
+                          >
+                              🗑️
+                          </button>
+                      </div>
                   )}
-                </p>
-                {isAuthor && (
-                    <div>
-                        <button
-                            onClick={() => handleDeletePost(post.id)}
-                            title="Izbriši objavo"
-                            style={{
-                            background: 'transparent',
-                            border: 'none',
-                            cursor: 'pointer',
-                            fontSize: '1.1rem',
-                            color: '#e74c3c',
-                            marginLeft: '1rem'
-                            }}
-                        >
-                            🗑️
-                        </button>
-                    </div>
-                )}
-            </div>
-              <p style={{ lineHeight: 1.5, marginBottom: 8, whiteSpace: 'pre-wrap' }}>{post.content}</p>
-              <small style={{ color: '#666', fontSize: '0.85rem' }}>
-                {new Date(post.created_at).toLocaleString()}
-              </small>
+              </div>
+                <p style={{ lineHeight: 1.5, marginBottom: 8, whiteSpace: 'pre-wrap' }}>{post.content}</p>
+                <small style={{ color: '#666', fontSize: '0.85rem' }}>
+                  {new Date(post.created_at).toLocaleString()}
+                </small>
             
                         
             </div>

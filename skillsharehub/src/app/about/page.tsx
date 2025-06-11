@@ -44,16 +44,18 @@ export default function PlaybookPage() {
         throw new Error('API endpoint ni dosegljiv. Preverite, ali route obstaja.')
       }
 
-      const response = await fetch(apiUrl, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ 
-          subject: selectedSubject,
-          category: selectedCategory,
-          language: 'slovenian',
-          difficulty: 'srednje'
-        }),
-      })
+    const response = await fetch('/api/generate-exercise', {
+  method: 'POST',
+  headers: {
+    'Content-Type': 'application/json',
+  },
+  body: JSON.stringify({
+    subject: selectedSubject,
+    category: selectedCategory,
+    difficulty: 'medium',
+  }),
+});
+
 
       // Dodatno preverjanje za netipične odzive
       if (response.status === 404) {

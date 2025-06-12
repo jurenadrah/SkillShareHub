@@ -2309,7 +2309,7 @@ export async function POST(request: Request) {
   }
 }
 
-function getPredefinedExercise(prompt: string): Exercise | null {
+export function getPredefinedExercise(prompt: string): Exercise | null {
   try {
     // Improved extraction of subject and category
     const subjectMatch = prompt.match(/predmeta\s+([^\n]+?)\s+na/i) || 
@@ -2440,3 +2440,5 @@ function getGenericFallback(prompt: string) {
     return questions[Math.floor(Math.random() * questions.length)];
   }
 }
+// Na koncu datoteke dodaj:
+export { parseGeneratedText, getGenericFallback, FALLBACK_EXERCISES };

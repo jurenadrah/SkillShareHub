@@ -131,3 +131,5 @@ Aplikacija bo dostopna na [http://localhost:3000](http://localhost:3000)
 * **Jure Nadrah** – [jure.nadrah@student.um.si](mailto:jure.nadrah@student.um.si)
 * **Izidor Robnik** – [izidor.robnik@student.um.si](mailto:izidor.robnik@student.um.si)
 ---
+
+Dostop do projekta na DockerHub: https://hub.docker.com/repository/docker/frucek1234/skillsharehub/general

@@ -317,7 +317,10 @@ export default function Home() {
             key={event.id}
             event={{
               ...event,
-              fk_id_uporabnik: { ime: '', priimek: undefined } // Provide default or fetch actual user info if available
+              fk_id_uporabnik: {
+                ime: '', priimek: undefined,
+                id: ''
+              } // Provide default or fetch actual user info if available
             }}
             user={user}
             isJoined={joinedEvents.has(event.id)}

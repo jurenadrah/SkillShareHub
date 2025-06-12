@@ -8,6 +8,7 @@ type Post = {
   content: string;
   created_at: string;
   fk_uporabniki_id: string; // or user_id
+  image_url:string;
 };
 
 type Uporabniki = {
@@ -26,6 +27,15 @@ type Uporabnik = {
   profilna_slika: string | null;
   tutor: boolean;
 };
+
+type Komentar = {
+  id:number;
+  postid:number;
+  userid:number;
+  senderid:number;
+  content:string;
+  created_at:string;
+}
 
 export default function PostsPage() {
   const [posts, setPosts] = useState<Post[]>([]);
@@ -118,7 +128,7 @@ export default function PostsPage() {
     // Prepare posts query with applied filters
     let query = supabase
       .from('Posti')
-      .select('id, content, created_at, fk_uporabniki_id')
+      .select('id, content, created_at, fk_uporabniki_id,image_url')
       .order('created_at', { ascending: false });
 
     if (appliedFilterUserId) {
@@ -180,25 +190,91 @@ export default function PostsPage() {
     setLoading(false);
   }
 
-  async function handleSubmit(e: React.FormEvent) {
-    e.preventDefault();
+  
 
-    if (!newPostContent.trim() || !currentUser) return;
+
+
+
+
+const [comments, setComments] = useState<Komentar[]>([]);
+const [newComment, setNewComment] = useState("");
+
+
+useEffect(() => {
+    const fetchComments = async () => {
+      if (!selectedPost?.id) return;
+      const { data, error } = await supabase
+        .from("Komentar")
+        .select("*")
+        .eq("postid", selectedPost.id)
+        .order("created_at", { ascending: true });
+
+      if (!error) setComments(data);
+    };
+
+    fetchComments();
+  }, [selectedPost]);
+
+  // Handle new comment submission
+  const handleCommentSubmit = async () => {
+    if (!newComment.trim() || !currentUser || !selectedPost?.id) return;
+    const { data, error } = await supabase.from("Komentar").insert([
+      {
+        postid: selectedPost.id,
+        senderid: currentUser.id,
+        content: newComment.trim(),
+      },
+    ]).select();
+
+    if (error) {
+      console.error("Error saving comment:", error);
+    } else if (data){
+      setComments([...comments, { ...data[0], content: newComment.trim() }]);
+      setNewComment("");
+    }
+  };
+
+
+  const handleDeleteComment = async (commentId: number) => {
+    const { error } = await supabase
+      .from("Komentar")
+      .delete()
+      .eq("id", commentId);
+
+    if (error) {
+      console.error("Napaka pri brisanju komentarja:", error);
+    } else {
+      setComments(comments.filter((c) => c.id !== commentId));
+    }
+  };
+
+
+  const [imageFile, setImageFile] = useState<File | null>(null);
+  const [uploading, setUploading] = useState(false);
+
+
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!newPostContent.trim() && !imageFile) return;
+
+    const imageUrl = await uploadImage();
 
     const { error } = await supabase.from('Posti').insert([
       {
-        fk_uporabniki_id: currentUser.id,
+        fk_uporabniki_id: currentUser!.id,
         content: newPostContent.trim(),
+        image_url: imageUrl,
       },
     ]);
 
     if (!error) {
       setNewPostContent('');
-      fetchPostsAndUsers();
+      setImageFile(null);
+      fetchPostsAndUsers(); // osveži poste
     } else {
       alert('Napaka pri objavi.');
     }
-  }
+  };
 
   async function handleDeletePost(postId: string) {
   const confirmDelete = confirm('Ali ste prepričani, da želite izbrisati to objavo?');
@@ -213,7 +289,46 @@ export default function PostsPage() {
   }
 }
 
+
+  const uploadImage = async () => {
+    if (!imageFile) return null;
+
+    const fileExt = imageFile.name.split('.').pop();
+    const fileName = `${Date.now()}.${fileExt}`;
+    const filePath = `${fileName}`;
+
+    setUploading(true);
+
+    const { data: uploadData, error: uploadError } = await supabase.storage
+      .from('slike')
+      .upload(filePath, imageFile);
+
+    setUploading(false);
+
+    if (uploadError) {
+      console.error('Napaka pri nalaganju slike:', uploadError);
+      return null;
+    }
+
+    // Dobimo javni URL do slike
+    const { data: urlData } = supabase.storage
+      .from('slike')
+      .getPublicUrl(filePath);
+
+    
+    return urlData.publicUrl;
+  };
+
+  const handleImageChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    if (e.target.files?.[0]) {
+      setImageFile(e.target.files[0]);
+    }
+  };
+
   if (loading) return <p>Loading posts...</p>;
+
+
+
 
   return (
     <div
@@ -232,57 +347,100 @@ export default function PostsPage() {
         onSubmit={handleSubmit}
         style={{
           marginBottom: '2rem',
+          backgroundColor: '#f9fafb',
+          padding: '1.5rem',
+          borderRadius: 12,
+          boxShadow: '0 2px 8px rgba(0,0,0,0.05)',
+          maxWidth: 600,
+          margin: '0 auto',
           display: 'flex',
           flexDirection: 'column',
-          alignItems: 'center',
-          gap: '0.5rem',
+          gap: '1rem',
         }}
       >
         <textarea
           rows={4}
           placeholder="Kaj razmišljaš?"
           value={newPostContent}
-          onChange={e => setNewPostContent(e.target.value)}
+          onChange={(e) => setNewPostContent(e.target.value)}
           style={{
             width: '100%',
-            padding: '0.75rem 1rem',
+            padding: '1rem',
             fontSize: '1rem',
             borderRadius: 8,
             border: '1px solid #ccc',
             resize: 'vertical',
             boxShadow: 'inset 0 1px 3px rgb(0 0 0 / 0.1)',
             fontFamily: 'inherit',
+            outline: 'none',
+            transition: 'border-color 0.2s',
           }}
+          onFocus={(e) => (e.currentTarget.style.borderColor = '#0070f3')}
+          onBlur={(e) => (e.currentTarget.style.borderColor = '#ccc')}
         />
-        <button
-          type="submit"
+
+        <label
+          htmlFor="image-upload"
           style={{
+            display: 'inline-block',
+            padding: '0.5rem 1rem',
             backgroundColor: '#0070f3',
             color: 'white',
-            border: '2px solid black',
             borderRadius: 6,
-            padding: '0.6rem 1.3rem',
-            fontSize: '1rem',
-            fontWeight: '600',
             cursor: 'pointer',
-            transition: 'background-color 0.2s ease, color 0.2s ease',
-            width: 'fit-content',
             textAlign: 'center',
+            maxWidth: 150,
           }}
-          onMouseEnter={e => {
-            e.currentTarget.style.backgroundColor = 'black';
-            e.currentTarget.style.color = '#fff';
+        >
+          Izberi sliko
+          <input
+            id="image-upload"
+            type="file"
+            accept="image/*"
+            onChange={handleImageChange}
+            style={{ display: 'none' }}
+          />
+        </label>
+
+        {uploading && <p style={{ color: '#666', fontStyle: 'italic' }}>Nalaganje slike...</p>}
+
+        <button
+          type="submit"
+          disabled={uploading}
+          style={{
+            backgroundColor: uploading ? '#8ab4f8' : '#0070f3',
+            color: 'white',
+            border: 'none',
+            borderRadius: 8,
+            padding: '0.75rem',
+            fontSize: '1.1rem',
+            fontWeight: '600',
+            cursor: uploading ? 'not-allowed' : 'pointer',
+            transition: 'background-color 0.3s',
+            width: '100%',
           }}
-          onMouseLeave={e => {
-            e.currentTarget.style.backgroundColor = '#0070f3';
-            e.currentTarget.style.color = 'white';
+          onMouseEnter={(e) => {
+            if (!uploading) e.currentTarget.style.backgroundColor = '#005bb5';
+          }}
+          onMouseLeave={(e) => {
+            if (!uploading) e.currentTarget.style.backgroundColor = '#0070f3';
           }}
         >
           Objavi
         </button>
       </form>
 
-      {/* Filters */}
+
+
+
+
+
+
+
+
+
+
+      {/* Filtri */}
       <div
         style={{
           display: 'flex',
@@ -295,90 +453,90 @@ export default function PostsPage() {
           backgroundColor: '#fafafa',
         }}
       >
-        {/* Filter by User */}
-        <label>
-          Filtriraj po uporabniku:{' '}
-          <select
-            value={filterUserIdInput}
-            onChange={e => setFilterUserIdInput(e.target.value)}
-            style={{ padding: '0.3rem', minWidth: 150 }}
-          >
-            <option value="">Vsi uporabniki</option>
-            {Object.values(usersMap).map(user => (
-              <option key={user.id} value={user.id}>
-                {user.ime} {user.priimek}
-              </option>
-            ))}
-          </select>
-        </label>
+            {/* Filter by User */}
+            <label>
+              Filtriraj po uporabniku:{' '}
+              <select
+                value={filterUserIdInput}
+                onChange={e => setFilterUserIdInput(e.target.value)}
+                style={{ padding: '0.3rem', minWidth: 150 }}
+              >
+                <option value="">Vsi uporabniki</option>
+                {Object.values(usersMap).map(user => (
+                  <option key={user.id} value={user.id}>
+                    {user.ime} {user.priimek}
+                  </option>
+                ))}
+              </select>
+            </label>
 
-        {/* Filter by Keyword */}
-        <label>
-          Iskanje po vsebini:{' '}
-          <input
-            type="text"
-            placeholder="Vnesi besedo ali frazo"
-            value={filterKeywordInput}
-            onChange={e => setFilterKeywordInput(e.target.value)}
-            style={{ padding: '0.3rem', width: '100%' }}
-          />
-        </label>
+            {/* Filter by Keyword */}
+            <label>
+              Iskanje po vsebini:{' '}
+              <input
+                type="text"
+                placeholder="Vnesi besedo ali frazo"
+                value={filterKeywordInput}
+                onChange={e => setFilterKeywordInput(e.target.value)}
+                style={{ padding: '0.3rem', width: '100%' }}
+              />
+            </label>
 
-        {/* Filter by Date */}
-        <div style={{ display: 'flex', gap: '1rem', alignItems: 'center' }}>
-          <label>
-            Od:{' '}
-            <input
-              type="date"
-              value={filterFromDateInput}
-              onChange={e => setFilterFromDateInput(e.target.value)}
-              style={{ padding: '0.3rem' }}
-            />
-          </label>
-          <label>
-            Do:{' '}
-            <input
-              type="date"
-              value={filterToDateInput}
-              onChange={e => setFilterToDateInput(e.target.value)}
-              style={{ padding: '0.3rem' }}
-            />
-          </label>
-        </div>
+            {/* Filter by Date */}
+            <div style={{ display: 'flex', gap: '1rem', alignItems: 'center' }}>
+              <label>
+                Od:{' '}
+                <input
+                  type="date"
+                  value={filterFromDateInput}
+                  onChange={e => setFilterFromDateInput(e.target.value)}
+                  style={{ padding: '0.3rem' }}
+                />
+              </label>
+              <label>
+                Do:{' '}
+                <input
+                  type="date"
+                  value={filterToDateInput}
+                  onChange={e => setFilterToDateInput(e.target.value)}
+                  style={{ padding: '0.3rem' }}
+                />
+              </label>
+            </div>
 
-        {/* Search Button */}
-        <button
-          onClick={e => {
-            e.preventDefault();
-            applyFilters();
-          }}
-          style={{
-            backgroundColor: '#0070f3',
-            color: 'white',
-            border: '2px solid black',
-            borderRadius: 6,
-            padding: '0.6rem 1.3rem',
-            fontSize: '1rem',
-            fontWeight: '600',
-            cursor: 'pointer',
-            width: 'fit-content',
-            textAlign: 'center',
-            alignSelf: 'start',
-            marginTop: '0.5rem',
-            transition: 'background-color 0.2s ease, color 0.2s ease',
-          }}
-          onMouseEnter={e => {
-            e.currentTarget.style.backgroundColor = 'black';
-            e.currentTarget.style.color = '#fff';
-          }}
-          onMouseLeave={e => {
-            e.currentTarget.style.backgroundColor = '#0070f3';
-            e.currentTarget.style.color = 'white';
-          }}
-        >
-          Išči
-        </button>
-      </div>
+            {/* Search Button */}
+            <button
+              onClick={e => {
+                e.preventDefault();
+                applyFilters();
+              }}
+              style={{
+                backgroundColor: '#0070f3',
+                color: 'white',
+                border: '2px solid black',
+                borderRadius: 6,
+                padding: '0.6rem 1.3rem',
+                fontSize: '1rem',
+                fontWeight: '600',
+                cursor: 'pointer',
+                width: 'fit-content',
+                textAlign: 'center',
+                alignSelf: 'start',
+                marginTop: '0.5rem',
+                transition: 'background-color 0.2s ease, color 0.2s ease',
+              }}
+              onMouseEnter={e => {
+                e.currentTarget.style.backgroundColor = 'black';
+                e.currentTarget.style.color = '#fff';
+              }}
+              onMouseLeave={e => {
+                e.currentTarget.style.backgroundColor = '#0070f3';
+                e.currentTarget.style.color = 'white';
+              }}
+            >
+              Išči
+            </button>
+          </div>
 
 
 
@@ -426,19 +584,151 @@ export default function PostsPage() {
           >
             {/* Left side: Post details */}
             <div style={{ flex: 1 }}>
-              <h2 style={{ marginBottom: '0.5rem' }}>
-                {usersMap[selectedPost.fk_uporabniki_id]?.ime} {usersMap[selectedPost.fk_uporabniki_id]?.priimek}
-              </h2>
+              {usersMap[selectedPost.fk_uporabniki_id] ? (
+                <Link href={`/viewprofile/${selectedPost.fk_uporabniki_id}`} passHref>
+                  <div className="flex items-center space-x-4 mb-2">
+                    <img
+                      src={usersMap[selectedPost.fk_uporabniki_id].profilna_slika ?? "/default-profile.png"}
+                      alt="Profilna slika"
+                      className="w-10 h-10 object-cover rounded-full"
+                    />
+                    <h2 style={{ marginBottom: '0.5rem' }}>
+                      {usersMap[selectedPost.fk_uporabniki_id].ime} {usersMap[selectedPost.fk_uporabniki_id].priimek}
+                    </h2>
+                  </div>
+                </Link>
+              ) : (
+                <h2 style={{ marginBottom: '0.5rem' }}>Neznan uporabnik</h2>
+              )}
               <p style={{ whiteSpace: 'pre-wrap', lineHeight: 1.5 }}>{selectedPost.content}</p>
+              {/* Show post image if exists */}
+              {selectedPost.image_url && (
+                <img
+                  src={selectedPost.image_url}
+                  alt="Post image"
+                  style={{ maxWidth: '100%', borderRadius: 8, marginBottom: '0.5rem' }}
+                />
+              )}
               <small style={{ color: '#666' }}>
                 {new Date(selectedPost.created_at).toLocaleString()}
               </small>
             </div>
 
-            {/* Right side: placeholder for comments or other data */}
-            <div style={{ flex: 1, backgroundColor: '#f9f9f9', padding: '1rem', borderRadius: 8 }}>
-              <p><strong>Other Info</strong></p>
-              <p>Could be comments, metadata, etc.</p>
+            {/* Right side: comments */}
+            <div
+              style={{
+                flex: 1,
+                backgroundColor: "#f9f9f9",
+                padding: "1rem",
+                borderRadius: 8,
+                display: "flex",
+                flexDirection: "column",
+                height: "100%",
+              }}
+            >
+              {/* Comments display area (top 80%) */}
+              <div style={{ flex: "0 1 80%", overflowY: "auto", marginBottom: "1rem" }}>
+                <p><strong>Komentarji</strong></p>
+                {comments.length === 0 ? (
+                  <p>Ni komentarjev.</p>
+                ) : (
+                  comments.map((comment, idx) => {
+                    const user = usersMap[comment.senderid];
+
+                    return (
+                      <div
+                        key={idx}
+                        style={{
+                          marginBottom: "0.5rem", 
+                          padding: "0.5rem",
+                          background: "#fff",
+                          borderRadius: 4,
+                          position:"relative",
+                        }}
+                      >
+                        {user ? (
+                          <Link href={`/viewprofile/${comment.senderid}`} passHref>
+                            <div className="flex items-center space-x-4 mb-2">
+                              <img
+                                src={user.profilna_slika ?? "/default-profile.png"}
+                                alt="Profilna slika"
+                                className="w-10 h-10 object-cover rounded-full"
+                              />
+                              <h2 style={{ marginBottom: "0.5rem" }}>
+                                {user.ime} {user.priimek}
+                              </h2>
+                            </div>
+                          </Link>
+                        ) : (
+                          <div className="mb-2">
+                            <h2 style={{ marginBottom: "0.5rem" }}>Neznan uporabnik</h2>
+                          </div>
+                        )}
+
+                        {/*comment content and timestamp*/}
+                        <p style={{ margin: 0 }}>{comment.content}</p>
+                        <small style={{ color: "#888" }}>
+                          {new Date(comment.created_at).toLocaleString()}
+                        </small>
+                        
+                        {/* Delete button aligned right inside the comment box */}
+                        {currentUser?.id === comment.senderid && (
+                          <button
+                            onClick={() => handleDeleteComment(comment.id)}
+                            style={{
+                              position: "absolute",
+                              top: "0.5rem",
+                              right: "0.5rem",
+                              background: "none",
+                              border: "none",
+                              color: "#d00",
+                              cursor: "pointer",
+                              fontSize: "1.2rem",
+                            }}
+                            title="Izbriši komentar"
+                            aria-label="Delete comment"
+                          >
+                            🗑
+                          </button>
+                        )}
+                        
+                      </div>
+                    );
+                  }))
+                }
+              </div>
+
+              {/* New comment input area (bottom 20%) */}
+              <div style={{ flex: "0 1 20%" }}>
+                <textarea
+                  value={newComment}
+                  onChange={(e) => setNewComment(e.target.value)}
+                  placeholder="Vnesi komentar..."
+                  style={{
+                    width: "100%",
+                    height: "60%",
+                    resize: "none",
+                    padding: "0.5rem",
+                    borderRadius: 4,
+                    border: "1px solid #ccc",
+                    marginBottom: "0.5rem",
+                  }}
+                />
+                <button
+                  onClick={handleCommentSubmit}
+                  style={{
+                    width: "100%",
+                    padding: "0.5rem",
+                    backgroundColor: "#0070f3",
+                    color: "white",
+                    border: "none",
+                    borderRadius: 4,
+                    cursor: "pointer",
+                  }}
+                >
+                  Dodaj komentar
+                </button>
+              </div>
             </div>
           </div>
         </div>
@@ -505,7 +795,7 @@ export default function PostsPage() {
                               cursor: 'pointer',
                               fontSize: '1.1rem',
                               color: '#e74c3c',
-                              marginLeft: '1rem'
+                              marginLeft: '1rem',
                               }}
                           >
                               🗑️
@@ -514,6 +804,16 @@ export default function PostsPage() {
                   )}
               </div>
                 <p style={{ lineHeight: 1.5, marginBottom: 8, whiteSpace: 'pre-wrap' }}>{post.content}</p>
+
+                  {/* Show post image if exists */}
+                  {post.image_url && (
+                    <img
+                      src={post.image_url}
+                      alt="Post image"
+                      style={{ maxWidth: '100%', borderRadius: 8, marginBottom: '0.5rem' }}
+                    />
+                  )}
+
                 <small style={{ color: '#666', fontSize: '0.85rem' }}>
                   {new Date(post.created_at).toLocaleString()}
                 </small>

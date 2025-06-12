@@ -3,6 +3,7 @@
 import { useEffect, useState } from 'react'
 import { supabase } from '@/lib/supabase'
 import '../tutor.css'
+import React from 'react'
 
 type Tutor = {
   id: number
@@ -52,6 +53,21 @@ type Banner = {
   naziv: string
   cena: number
   slika_url: string
+}
+
+interface Komentar {
+  id: number;
+  postid: number | null;
+  userid: number | null;
+  senderid: number | null;
+  content: string | null;
+  created_at: string;
+  tocke: number | null;
+  sender: {
+    ime: string;
+    priimek: string;
+    profilna_slika: string | null;
+  };
 }
 
 export default function TutorProfile() {
@@ -530,12 +546,111 @@ const kupiBanner = async () => {
     }
   }
 
+
+  const [komentarji, setKomentarji] = useState<Komentar[]>([]);
+  const [currentUser, setCurrentUser] = useState<any>(null);
+
+  const handleDeleteComment = async (komentarId: number) => {
+      const confirmDelete = confirm('Ali res želiš izbrisati ta komentar?');
+      if (!confirmDelete) return;
+
+      const { error } = await supabase
+        .from('Komentar')
+        .delete()
+        .eq('id', komentarId);
+
+      if (error) {
+        console.error('Napaka pri brisanju komentarja:', error);
+        alert('Napaka pri brisanju komentarja.');
+      } else {
+        fetchKomentarji(); // ponovno naloži komentarje
+      }
+    };
+
+    async function fetchKomentarji() {
+      console.log(currentUser.id)
+      const { data, error } = await supabase
+        .from('Komentar')
+        .select(`*,
+          sender:senderid (
+            ime,
+            priimek,
+            profilna_slika
+          )
+        `)
+        .eq('userid',currentUser?.id)
+        .order('created_at', { ascending: false });
+          
+      if (error) {
+        console.error('Napaka pri pridobivanju komentarjev:', error);
+        return;
+      }
+      setKomentarji(data);
+    }
+
+    useEffect(() => {
+      fetchLoginUser();
+    }, []);
+    useEffect(() => {
+      if (currentUser) {
+        fetchKomentarji();
+      }
+    }, [currentUser]);
+
+    
+
+    
+
+    async function fetchLoginUser() {
+      // 1. Pridobi trenutno prijavljenega uporabnika prek Supabase Auth
+      const {
+        data: { user },
+        error: userError,
+      } = await supabase.auth.getUser();
+
+      if (userError || !user) {
+        setLoading(false);
+        return;
+      }
+
+      // 2. Pridobi dodatne podatke o uporabniku iz tabele 'Uporabniki'
+      const { data: uporabnikData, error: uporabnikError } = await supabase
+        .from('Uporabniki')
+        .select('id, ime, priimek, email, bio, profilna_slika, tutor')
+        .eq('email', user.email)
+        .single();
+
+      if (uporabnikError || !uporabnikData) {
+        setLoading(false);
+        return;
+      }
+
+      // 3. Shrani trenutno uporabnika v state
+      setCurrentUser(uporabnikData);
+    }
+
+
   if (loading) return <div className="tutor-profile-container"><p>Nalaganje...</p></div>
   if (!tutor) return <div className="tutor-profile-container"><p>Ni najdenega tutor profila.</p></div>
 
   const nextBanner = getNextBanner()
   const hasMaxBanner = tutor.aktiven_banner && 
     bannerji.some(b => b.slika_url === tutor.aktiven_banner && b.cena === bannerPrices[bannerPrices.length - 1])
+
+
+
+
+    
+
+    
+
+
+
+
+
+
+
+
 
   return (
     <div className="tutor-profile-container">
@@ -1042,23 +1157,70 @@ const kupiBanner = async () => {
       {success && <div className="success-message">{success}</div>}
 
       <div className="reviews-section">
-        <h2>Komentarji in ocene</h2>
-        {ocene.length === 0 ? (
-          <p>Tutor še nima ocen.</p>
-        ) : (
-          <div>
-            {ocene.map((o, i) => (
-              <div key={i} className="review">
-                <p><strong>Učenec:</strong> {o.ucenec_email}</p>
-                <p><strong>Točke:</strong> {o.tocke}/5</p>
-                <p><strong>Komentar:</strong> {o.komentar}</p>
-              </div>
-            ))}
-          </div>
-        )}
-      </div>
-   {error && <div className="error-message">{error}</div>}
+        <h2 style={{ marginBottom: '1rem', borderBottom: '2px solid #0070f3', paddingBottom: '0.5rem' }}>Komentarji z ocenami</h2>
+
+                {komentarji.length === 0 ? (
+                  <p>Tutor še nima komentarjev.</p>
+                ) : (
+                  <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
+                    {komentarji.map((k, i) => {
+                      const canDelete = currentUser?.id === k.senderid || currentUser?.id === k.userid;
+
+                      return (
+                        <div
+                          key={i}
+                          className="review-card"
+                          style={{
+                            boxShadow: '0 2px 6px rgba(0,0,0,0.1)',
+                            borderRadius: 10,
+                            padding: '1rem',
+                            backgroundColor: 'white',
+                            display: 'flex',
+                            flexDirection: 'column',
+                            gap: '0.5rem',
+                          }}
+                        >
+                          <div style={{ display: 'flex', alignItems: 'center', gap: '1rem' }}>
+                            <img
+                              src={k.sender.profilna_slika ?? '/default-profile.png'}
+                              alt={`${k.sender.ime} ${k.sender.priimek}`}
+                              style={{ width: 48, height: 48, borderRadius: '50%', objectFit: 'cover' }}
+                            />
+                            <div>
+                              <p style={{ fontWeight: '700', margin: 0 }}>{k.sender.ime} {k.sender.priimek}</p>
+                              {typeof k.tocke === 'number' && (
+                                <p style={{ margin: 0, color: '#f39c12' }}>Ocena: {k.tocke}/5</p>
+                              )}
+                            </div>
+                            <small style={{ marginLeft: 'auto', color: '#666', fontSize: '0.8rem' }}>
+                              {new Date(k.created_at).toLocaleDateString()}
+                            </small>
+                            {canDelete && (
+                              <button
+                                onClick={() => handleDeleteComment(k.id)}
+                                title="Izbriši komentar"
+                                style={{
+                                  background: 'transparent',
+                                  border: 'none',
+                                  color: '#e74c3c',
+                                  cursor: 'pointer',
+                                  marginLeft: '1rem',
+                                  fontSize: '1.2rem',
+                                }}
+                              >
+                                🗑️
+                              </button>
+                            )}
+                          </div>
+                          <p style={{ marginTop: '0.5rem' }}>{k.content}</p>
+                        </div>
+                      );
+                    })}
+                  </div>
+                )}
+      {error && <div className="error-message">{error}</div>}
       {success && <div className="success-message">{success}</div>}
+    </div>
     </div>
   )
 }

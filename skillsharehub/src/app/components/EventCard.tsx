@@ -4,10 +4,12 @@ import { useEffect, useState } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
 import { supabase } from '@/lib/supabase'
 import { GoogleCalendarAPI } from '@/lib/googleCalendar'
+import Link from 'next/link'
 
 type Event = {
   id: number
   fk_id_uporabnik: {
+    id: string
     ime: string
     priimek?: string
   } | null
@@ -128,6 +130,7 @@ const setAlreadyPaid = () => {
         .select(`
           *,
           fk_id_uporabnik (
+            id,
             ime,
             priimek
           )
@@ -449,17 +452,20 @@ const handleJoinEvent = async () => {
           <p className="text-sm italic text-gray-700 mb-2 flex flex-wrap gap-x-1">
             <span className="font-medium whitespace-nowrap">Predavatelj:</span>
             <span className="whitespace-normal break-words">
-              {
-                (eventDetails?.fk_id_uporabnik
-                  ? `${eventDetails.fk_id_uporabnik.ime ?? ''} ${eventDetails.fk_id_uporabnik.priimek ?? ''}`.trim()
-                  : event.fk_id_uporabnik
-                  ? `${event.fk_id_uporabnik.ime ?? ''} ${event.fk_id_uporabnik.priimek ?? ''}`.trim()
-                  : eventDetails?.lecturer || event.lecturer
-                )
-              }
+              {(eventDetails?.fk_id_uporabnik || event?.fk_id_uporabnik) ? (
+                <Link
+                  href={`/viewprofile/${eventDetails?.fk_id_uporabnik?.id ?? event?.fk_id_uporabnik?.id ?? ''}`}
+                  className="text-blue-600 hover:underline"
+                >
+                  {(eventDetails?.fk_id_uporabnik?.ime ?? event?.fk_id_uporabnik?.ime ?? '') + ' ' + (eventDetails?.fk_id_uporabnik?.priimek ?? event?.fk_id_uporabnik?.priimek ?? '')}
+                </Link>
+              ) : (
+                eventDetails?.lecturer || event.lecturer
+              )}
             </span>
           </p>
         </div>
+
         
         <div className="flex flex-col justify-between items-center mb-3">
           {event.predmet_naziv && (
@@ -569,15 +575,20 @@ const handleJoinEvent = async () => {
                   {/* Lecturer */}
                   <div>
                     <h4 className="font-semibold text-gray-700 mb-1">Predavatelj:</h4>
-                    <p className="text-gray-600">
-                      {eventDetails?.fk_id_uporabnik
-                        ? `${eventDetails.fk_id_uporabnik.ime ?? ''} ${eventDetails.fk_id_uporabnik.priimek ?? ''}`.trim()
-                        : event.fk_id_uporabnik
-                        ? `${event.fk_id_uporabnik.ime ?? ''} ${event.fk_id_uporabnik.priimek ?? ''}`.trim()
-                        : eventDetails?.lecturer || event.lecturer
-                      }
-                    </p>
+                    {(eventDetails?.fk_id_uporabnik || event?.fk_id_uporabnik) ? (
+                      <Link
+                        href={`/viewprofile/${eventDetails?.fk_id_uporabnik?.id || event?.fk_id_uporabnik?.id}`}
+                        className="text-blue-600 hover:underline"
+                      >
+                        {(eventDetails?.fk_id_uporabnik?.ime ?? event?.fk_id_uporabnik?.ime) + ' ' + (eventDetails?.fk_id_uporabnik?.priimek ?? event?.fk_id_uporabnik?.priimek)}
+                      </Link>
+                    ) : (
+                      <p className="text-gray-600">
+                        {eventDetails?.lecturer || event.lecturer}
+                      </p>
+                    )}
                   </div>
+
                   
                   {/* Time */}
                   <div>

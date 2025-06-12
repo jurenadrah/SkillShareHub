@@ -145,21 +145,26 @@ describe('EventCard', () => {
     expect(screen.getByText('Dogodek se je končal')).toBeInTheDocument()
   })
 
-  test('shows rejoin option for ongoing events that were already paid', () => {
-    const ongoingEvent = {
-      ...mockEvent,
-      start_date_time: '2025-06-11T09:00:00',
-      end_date_time: '2025-06-11T23:00:00'
-    }
+test('shows rejoin option for ongoing events that were already paid', () => {
+  // Set system time to during the event
+  jest.useFakeTimers().setSystemTime(new Date('2025-06-11T12:00:00Z'))
 
-    // Mock localStorage to return that event was already paid
-    localStorageMock.getItem.mockReturnValue('true')
+  const ongoingEvent = {
+    ...mockEvent,
+    start_date_time: '2025-06-11T09:00:00',
+    end_date_time: '2025-06-11T23:00:00'
+  }
 
-    render(<EventCard {...mockProps} event={ongoingEvent} />)
-    
-    expect(screen.getByText('V teku')).toBeInTheDocument()
-    expect(screen.getByText('Ponovno se pridruži (brezplačno)')).toBeInTheDocument()
-  })
+  localStorageMock.getItem.mockReturnValue('true')
+
+  render(<EventCard {...mockProps} event={ongoingEvent} />)
+
+  expect(screen.getByText('V teku')).toBeInTheDocument()
+  expect(screen.getByText('Ponovno se pridruži (brezplačno)')).toBeInTheDocument()
+
+  jest.useRealTimers()
+})
+
 
   test('opens modal when clicking on event title', () => {
     render(<EventCard {...mockProps} />)

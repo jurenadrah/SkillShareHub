@@ -1,0 +1,18 @@
+SkillShareHub
+
+Platforma za medsebojno pomoč pri učenju, ki brezplačno povezuje uporabnike z različnimi znanji ter rešuje težave lokacije in stroškov inštrukcij.
+
+Leto izdelave: 2025
+
+Larisa Gragar
+Jure Nadrah
+Izidor Robnik
+
+Domača stran: https://skill-share-hub-git-main-skillsharehubs-projects-a282906b.vercel.app
+Koda: https://github.com/jurenadrah/SkillShareHub.git
+
+Kategorizacija: spletna aplikacija
+
+Oznake: Next.js, ReactJS, Tailwin, PostgreSQL, NodeJS, Scrum, AgilenRazvoj, GitHub, Docker
+
+SkillShareHub je inovativna spletna platforma za izmenjavo veščin, namenjena posameznikom, ki si želijo učiti in poučevati na enakovreden in motivirajoč način. Uporabniki lahko ustvarijo svoj profil, predstavijo svoje znanje ter najdejo druge, ki želijo pridobiti podobna znanja ali jih deliti. Sistem temelji na "skill-for-skill" modelu: za vsako poučevanje uporabnik pridobi točke, ki jih lahko nato porabi za udeležbo na drugih sejah. Platforma omogoča video srečanja preko Zooma, upravljanje terminov preko koledarja, ocenjevanje po sejah ter sledenje napredku. SkillShareHub je posebej primeren za študente, samouke in vse, ki želijo brezplačno razvijati svoje kompetence. Zgrajen je s pomočjo tehnologij Next.js, Supabase, Tailwind CSS in gostovan na Vercelu. Cilj projekta je ustvariti dostopno in pravično učno okolje, ki spodbuja medsebojno učenje in rast skupnosti.

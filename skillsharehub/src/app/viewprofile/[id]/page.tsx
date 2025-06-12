@@ -1,6 +1,5 @@
 'use client'
 
-import { GoogleCalendarAPI } from '@/lib/googleCalendar'
 import MyEvents from '@/app/components/MyEvents'
 import CalendarApp from '@/app/components/CalendarApp'
 import React, { useEffect, useState } from 'react'
@@ -105,7 +104,7 @@ interface Komentar {
 
 
 
-export default function TutorProfileReadOnly() {
+export default function ProfileReadOnly() {
   const params = useParams();
   const userId = params.id;
 
@@ -514,59 +513,6 @@ export default function TutorProfileReadOnly() {
           fetchKomentarji(); // ponovno naloži komentarje
         }
       };
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 
 
     

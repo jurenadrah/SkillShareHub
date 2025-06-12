@@ -209,11 +209,11 @@ describe('PostsPage', () => {
     
     await waitFor(() => {
       expect(mockInsert).toHaveBeenCalledWith([
-        {
+        expect.objectContaining({
           fk_uporabniki_id: 1,
           content: 'Nova testna objava',
-        },
-      ]);
+        }),
+      ])
     });
   });
 

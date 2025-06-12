@@ -172,7 +172,8 @@ describe('MessagesPage', () => {
         render(<MessagesPage />)
       })
       
-      expect(screen.getByText('Select a user to start chatting')).toBeInTheDocument()
+      expect(screen.getByText('Izberi osebo za klepet.')).toBeInTheDocument()
+
     })
   })
 
@@ -208,7 +209,7 @@ describe('MessagesPage', () => {
         render(<MessagesPage />)
       })
       
-      expect(screen.getByText('Select a user to start chatting')).toBeInTheDocument()
+      expect(screen.getByText('Izberi osebo za klepet.')).toBeInTheDocument()
     })
   })
 
@@ -248,7 +249,7 @@ describe('MessagesPage', () => {
       })
       
       // Close modal
-      const closeButton = screen.getByText('✕')
+      const closeButton = screen.getByText('×')
       await act(async () => {
         await user.click(closeButton)
       })
@@ -369,7 +370,7 @@ describe('MessagesPage', () => {
       })
       
       // Verify initial state
-      expect(screen.getByText('Select a user to start chatting')).toBeInTheDocument()
+      expect(screen.getByText('Izberi osebo za klepet.')).toBeInTheDocument()
       expect(screen.getByText('Select Chat')).toBeInTheDocument()
     })
 
